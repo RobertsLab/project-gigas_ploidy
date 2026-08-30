@@ -1,0 +1,101 @@
+# Analysis Workflow
+
+End-to-end pipeline for the gigas ploidy desiccation WGBS + qPCR study.
+
+---
+
+## Samples
+
+10 ctenidia tissue samples sequenced by WGBS (Zymo-Seq kit):
+
+| SeqID | Library | Ploidy | Desiccation | Heat Shock | SRA |
+|-------|---------|--------|-------------|------------|-----|
+| zr3534_1 | D11-C | Diploid | Yes | No | SRX9508698 |
+| zr3534_2 | D12-C | Diploid | Yes | No | SRX9508699 |
+| zr3534_3 | D13-C | Diploid | Yes | No | SRX9508700 |
+| zr3534_4 | D19-C | Diploid | Yes | Yes | SRX9508701 |
+| zr3534_5 | D20-C | Diploid | Yes | Yes | SRX9508702 |
+| zr3534_6 | T11-C | Triploid | Yes | No | SRX9508703 |
+| zr3534_7 | T12-C | Triploid | Yes | No | SRX9508704 |
+| zr3534_8 | T13-C | Triploid | Yes | No | SRX9508705 |
+| zr3534_9 | T19-C | Triploid | Yes | Yes | SRX9508706 |
+| zr3534_10 | T20-C | Triploid | Yes | Yes | SRX9508707 |
+
+SRA BioProject: [PRJNA678408](https://www.ncbi.nlm.nih.gov/bioproject/PRJNA678408)
+
+> **Note:** The PE report for zr3534_7 is not committed to this repo but the sample is present in `data/PE_reports/percent_methylation_summary.xlsx` and was included in downstream analyses.
+
+---
+
+## WGBS Pipeline
+
+### Step 1 — Adapter trimming
+**Script:** `bisulfite_analysis/WGBS/sbatch_scripts/20210316_cgig_fastp_ronit-ploidy-wgbs.sh`  
+**Tool:** fastp  
+**Input:** Raw FASTQ (paired-end)  
+**Output:** Trimmed FASTQ
+
+### Step 2 — Alignment
+**Tool:** Bismark + bowtie2  
+**Reference genome:** *C. gigas* Roslin v1 (`cgigas_uk_roslin_v1`)  
+**Output:** BAM files at https://gannet.fish.washington.edu/panopea/030521-ronrosM/  
+Alignment statistics summarized in PE report `.txt` files (`bisulfite_analysis/WGBS/data/PE_reports/`).
+
+### Step 3 — PE Report Analysis
+**Script:** `bisulfite_analysis/WGBS/code/1_WGBS_PE_report_analysis.R`  
+**Input:** Bismark PE report `.txt` files  
+**Output:** `data/PE_reports/percent_methylation_summary.xlsx` — per-sample mapping rates and global methylation %
+
+### Step 4 — DML Calling
+**Script:** `bisulfite_analysis/WGBS/code/2_WGBS_Methylkit.R`  
+**Tool:** MethylKit (R)  
+**Input:** COV files at https://gannet.fish.washington.edu/panopea/WGBS-gigas-ploidy-desiccation/cov_files/  
+**Parameters:** 10x coverage filter; 20% methylation difference threshold  
+**Output:**
+- `bisulfite_analysis/WGBS/DML/DML-getMethylDiff-ploidy-Cov10-20.csv` — 60,721 DMLs
+- `bisulfite_analysis/WGBS/DML/DML-getMethylDiff-ploidy-Cov10-50.csv/.bed` — high-confidence subset (50% diff)
+- `bisulfite_analysis/WGBS/DML/ALL-CpG-Cov10.csv` — all CpGs passing coverage filter
+- PCA, clustering, and methylation distribution plots in `bisulfite_analysis/WGBS/plots/`
+
+### Step 5 — DML Genomic Feature Location
+**Script:** `bisulfite_analysis/WGBS/code/3_WGBS_DML_feature_location.ipynb`  
+**Tool:** bedtools (via Jupyter notebook)  
+**Input:** DML BED files + GFF annotations in `bisulfite_analysis/WGBS/GFF/`  
+**Genome features available:** gene, mRNA, exonUTR, intron, intergenic, lncRNA, upstream, downstream, flanks, TE  
+**Output:** `bisulfite_analysis/WGBS/analyses/DML_locations_genome_feature.xlsx`
+
+---
+
+## qPCR Pipeline
+
+### Step 6 — dCt Analysis
+**Script:** `gene_expression/scripts/dct_analysis_NA-to-45.R`  
+**Input:** `gene_expression/data/qpcr_ct_values/qpcr_data_consolidated.csv`  
+**Reference gene:** Actin  
+**Genes analyzed:** HSC70, DNMT1, MBD2, MeCP2, HIF1A, HATHaP2, HAT, HSP90, SOD, ATPsynthetase, COX1  
+**NA handling:** Undetermined Ct values set to 45  
+**Statistics:** Two-way ANOVA (`Ploidy + Desiccation + Ploidy:Desiccation`) + Tukey HSD  
+**Output:** Boxplots in `gene_expression/analyses/`
+
+---
+
+## Global DNA Methylation (ELISA)
+
+### Step 7 — MethylFlash ELISA Analysis
+**Script:** `bisulfite_analysis/ELISA/GlobalDNAMeth_Polyploids.Rmd`  
+**Input:** Raw plate reader data in `bisulfite_analysis/ELISA/docs/`  
+**Kit:** MethylFlash Global DNA Methylation ELISA (EpiGentek P-1030)  
+**Output:** `bisulfite_analysis/ELISA/figures/5mC_figure.png` — 5mC % by ploidy/treatment
+
+---
+
+## Key Results Files
+
+| File | Description |
+|------|-------------|
+| `bisulfite_analysis/WGBS/DML/DML-getMethylDiff-ploidy-Cov10-20.csv` | All DMLs (≥10x cov, ≥20% diff) |
+| `bisulfite_analysis/WGBS/DML/DML-getMethylDiff-ploidy-Cov10-50.bed` | High-confidence DMLs (≥50% diff) |
+| `bisulfite_analysis/WGBS/analyses/DML_locations_genome_feature.xlsx` | DML genomic distribution |
+| `bisulfite_analysis/WGBS/analyses/coverage_summary.xlsx` | Per-sample CpG coverage stats |
+| `gene_expression/analyses/` | Per-gene qPCR expression boxplots |
+| `bisulfite_analysis/ELISA/figures/5mC_figure.png` | Global 5mC % |
