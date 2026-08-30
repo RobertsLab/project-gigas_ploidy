@@ -1,4 +1,7 @@
 #
+# DEPRECATED — do not use. Contains an unresolved git merge conflict.
+# Use dct_analysis_NA-to-45.R instead (adds NA→45 imputation, SOD, ATPsynthetase, COX1 genes).
+#
 # UNCOMMENT the lines below if you do have the packages already installed
 #
 install.packages("ggplot2")
