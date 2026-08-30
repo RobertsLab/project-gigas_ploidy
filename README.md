@@ -2,6 +2,9 @@
 
 Project investigating the effects of desiccation and elevated temperature exposure on **triploid and diploid Pacific oysters** (*Crassostrea gigas*).
 
+> [!IMPORTANT]
+> The current methylation analyses contain known correctness and reproducibility issues. See the [DNA Methylation Analysis Remediation Plan](METHYLATION_REMEDIATION_PLAN.md) before using the WGBS or ELISA results.
+
 ## Manuscripts & Presentations
 
 - [Manuscript (Google Doc)](https://docs.google.com/document/d/17mcGDI-TWmU4vgBXmiXmeofe4qEuFH5inBKBHhG9tzg/edit)
@@ -72,4 +75,3 @@ Large files are hosted externally:
 | T19–T20 | Triploid | Desiccation + 27°C for 24 hrs + 1 hr heat shock (45°C) |
 
 WGBS sequencing IDs: `zr3534_1` through `zr3534_10` (see `gene_expression/data/zr3534_wgbs_info.csv`).
-
