@@ -18,10 +18,17 @@ This writes `per_sample.csv` and `group_summary.csv` to a new timestamped direct
 
 ## 2. MethylKit DML Calling
 **`2_WGBS_Methylkit.R`**
-Loads COV files (from gannet server), filters by coverage (≥10x), and uses MethylKit to identify differentially methylated loci (DMLs) between diploid and triploid samples. Outputs:
-- `DML/DML-getMethylDiff-ploidy-Cov10-*.csv`
-- `DML/DML-getMethylDiff-ploidy-Cov10-*.bed`
-- PCA and clustering plots in `plots/`
+Runs the primary ploidy effect adjusted for heat shock from explicit external COV inputs. The script uses methylKit's tabix-backed objects, preserves all biological replicates, writes the complete statistics table before threshold subsets, and generates paired CSV/BED files from the same rows.
+
+Use `download_cov_inputs.sh` to retrieve the ten external inputs, then run through the configuration-aware wrapper:
+
+```bash
+export GIGAS_WGBS_COV_DIR=/path/to/wgbs-cov
+bisulfite_analysis/WGBS/code/run_methylkit_dml.sh --preflight-only
+bisulfite_analysis/WGBS/code/run_methylkit_dml.sh
+```
+
+The full run requires the pinned container in `../environment/`. See `../DML_ANALYSIS.md` for the input contract, model, filtering rationale, output definitions, and container command. PCA and clustering are deliberately excluded from this script until the unbiased all-CpG plotting workflow is implemented.
 
 ## 3. DML Genomic Feature Location
 **`3_WGBS_DML_feature_location.ipynb`**

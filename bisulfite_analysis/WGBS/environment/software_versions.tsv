@@ -1,0 +1,7 @@
+stage	software	version	status	source	source_sha256
+historical_preprocessing	Bismark	0.21.0	observed in reports and cluster script	bisulfite_analysis/WGBS/sbatch_scripts/20210316_cgig_fastp_ronit-ploidy-wgbs.sh	
+historical_preprocessing	Bowtie 2	2.3.4.1	recorded in cluster script	bisulfite_analysis/WGBS/sbatch_scripts/20210316_cgig_fastp_ronit-ploidy-wgbs.sh	
+historical_preprocessing	samtools	1.9	recorded in cluster script	bisulfite_analysis/WGBS/sbatch_scripts/20210316_cgig_fastp_ronit-ploidy-wgbs.sh	
+remediated_downstream	R	4.6.0	pinned	bisulfite_analysis/WGBS/environment/Dockerfile	
+remediated_downstream	Bioconductor	3.23	pinned	bisulfite_analysis/WGBS/environment/Dockerfile	
+remediated_downstream	methylKit	1.38.0	pinned	bisulfite_analysis/WGBS/environment/Dockerfile	008990fdf453e7ec66781ea6736b8f373dfae12d891c76ef3bf3456e97ff264e

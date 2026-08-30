@@ -53,12 +53,11 @@ Alignment statistics summarized in PE report `.txt` files (`bisulfite_analysis/W
 **Script:** `bisulfite_analysis/WGBS/code/2_WGBS_Methylkit.R`  
 **Tool:** MethylKit (R)  
 **Input:** COV files at https://gannet.fish.washington.edu/panopea/WGBS-gigas-ploidy-desiccation/cov_files/  
-**Parameters:** 10x coverage filter; 20% methylation difference threshold  
-**Output:**
-- `bisulfite_analysis/WGBS/DML/DML-getMethylDiff-ploidy-Cov10-20.csv` — 60,721 DMLs
-- `bisulfite_analysis/WGBS/DML/DML-getMethylDiff-ploidy-Cov10-50.csv/.bed` — high-confidence subset (50% diff)
-- `bisulfite_analysis/WGBS/DML/ALL-CpG-Cov10.csv` — all CpGs passing coverage filter
-- PCA, clustering, and methylation distribution plots in `bisulfite_analysis/WGBS/plots/`
+**Primary model:** ploidy effect adjusted for heat shock; MN overdispersion; F test; SLIM q-values; predicted effect; q ≤0.01
+**Command:** `bisulfite_analysis/WGBS/code/run_methylkit_dml.sh`
+**Output:** complete and thresholded tables in a new directory under `bisulfite_analysis/WGBS/results/dml/`. See `bisulfite_analysis/WGBS/DML_ANALYSIS.md`.
+
+The historical files in `bisulfite_analysis/WGBS/DML/` and `plots/` remain legacy pending a successful full rerun in the pinned environment.
 
 ### Step 5 — DML Genomic Feature Location
 **Script:** `bisulfite_analysis/WGBS/code/3_WGBS_DML_feature_location.ipynb`  

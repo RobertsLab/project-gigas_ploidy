@@ -1,483 +1,398 @@
-
-# Title: WGBS analysis.R
-# Author: Matthew George; mattgeorgephd@gmail.com
-# Date: 03/2021
-
-###################################################################################################
-## Setup work space
-
-rm(list=ls()) # clear all
-
-## First time? - install these
-# install.packages("readr")
-# install.packages("tidyverse")
-# install.packages("devtools")
-# install.packages("vegan")
-# install.packages("pheatmap")
-# install.packages("gplots")
-# if (!requireNamespace("BiocManager", quietly = TRUE))
-# install.packages("BiocManager")
-# BiocManager::install(version = "3.12")
-# BiocManager::install(c("GenomicFeatures", "AnnotationDbi","methylKit"))
-# browseVignettes("methylKit") #methylKit manual
-
-# Load R packages
-library(rstudioapi)
-require(tidyverse)
-require(devtools)
-require(vegan)
-require(pheatmap) 
-require(gplots)
-require(methylKit)
-require(readr)
-
-# Grab the WD from the file location and set it
-home <- getActiveDocumentContext()$path
-setwd(dirname(home)); getwd()
-setwd('..')
-home <- getwd()
-###################################################################################################
-## Load previous session data. Return here to save after big unites.
-
-setwd("E:/project-gigas_ploidy/R_sessions")
-# save.image("20210528_methylKit_DMLs_cov10.RData") #Save R Data in case R crashes
-load("20210528_methylKit_DMLs_cov10.RData") #Load R Data
-
-####################################################################################################
-## Find files and generate list
-
-# Put all .cov files into a list for analysis.
-setwd("E:/project-gigas_ploidy/cov_files") # set working directory to location of .cov files
-analysisFiles <- list("E:/project-gigas_ploidy/cov_files/zr3534_1_R1.fastp-trim.20201202.CpG_report.merged_CpG_evidence.cov",
-                      "E:/project-gigas_ploidy/cov_files/zr3534_2_R1.fastp-trim.20201202.CpG_report.merged_CpG_evidence.cov",
-                      "E:/project-gigas_ploidy/cov_files/zr3534_3_R1.fastp-trim.20201202.CpG_report.merged_CpG_evidence.cov",
-                      "E:/project-gigas_ploidy/cov_files/zr3534_4_R1.fastp-trim.20201202.CpG_report.merged_CpG_evidence.cov",
-                      "E:/project-gigas_ploidy/cov_files/zr3534_5_R1.fastp-trim.20201202.CpG_report.merged_CpG_evidence.cov",
-                      "E:/project-gigas_ploidy/cov_files/zr3534_6_R1.fastp-trim.20201202.CpG_report.merged_CpG_evidence.cov",
-                      "E:/project-gigas_ploidy/cov_files/zr3534_7_R1.fastp-trim.20201202.CpG_report.merged_CpG_evidence.cov",
-                      "E:/project-gigas_ploidy/cov_files/zr3534_8_R1.fastp-trim.20201202.CpG_report.merged_CpG_evidence.cov",
-                      "E:/project-gigas_ploidy/cov_files/zr3534_9_R1.fastp-trim.20201202.CpG_report.merged_CpG_evidence.cov",
-                      "E:/project-gigas_ploidy/cov_files/zr3534_10_R1.fastp-trim.20201202.CpG_report.merged_CpG_evidence.cov")
-
-setwd(dirname(home)); getwd() # reset working directory to home dir
-
-####################################################################################################
-## Run Methylkit
-
-# Create data.frame with sample info
-sampleMetadata <- data.frame("sampleID" = c("1", "2", "3", "4","5", "6", "7", "8", "9", "10"),
-                             "treatment" = c(rep(0, times = 5),rep(1, times = 5))) # Specify which treatment the samples were from. All animals were subjected to desiccation. 0 = diploid, 1 = triploid 
-head(sampleMetadata) #Confirm data.frame creation
-
-# Use `methRead` to create a methylation object from the coverage files, and include sample ID and treatment information.
-processedFiles <- methylKit::methRead(analysisFiles,
-                                      sample.id = list("1", "2", "3", "4","5", "6", "7", "8", "9", "10"),
-                                      assembly = "Roslin",
-                                      treatment = sampleMetadata$treatment,
-                                      pipeline = "bismarkCoverage",
-                                      mincov = 2) #Process files. Treatment specified based on ploidy status. Use mincov = 2 to quickly process reads.
-
-# Filter coverage information for minimum 5x coverage and 10x coverage 
-# remove PCR duplicates by excluding data in the 99.9th percentile of coverage with hi.perc = 99.9. 
-# Normalize coverage between samples to avoid over-sampling reads from one sample during statistical testing
-
-processedFilteredFilesCov1 <- methylKit::filterByCoverage(processedFiles,
-                                                           lo.count = 1, lo.perc = NULL,
-                                                           high.count = NULL, high.perc = 99.9) %>% methylKit::normalizeCoverage(.)
-
-processedFilteredFilesCov5 <- methylKit::filterByCoverage(processedFiles,
-                                                          lo.count = 5, lo.perc = NULL,
-                                                          high.count = NULL, high.perc = 99.9) %>% methylKit::normalizeCoverage(.)
-
-processedFilteredFilesCov10 <- methylKit::filterByCoverage(processedFiles,
-                                                          lo.count = 10, lo.perc = NULL,
-                                                          high.count = NULL, high.perc = 99.9) %>% methylKit::normalizeCoverage(.)
-
-####################################################################################################
-## Create file name lists for plots
-
-# Create data.frame for file names
-nFiles       <- 10 #Count number of samples
-fileNameCov5  <- data.frame("nameBase"  = rep("../percent-CpG-methylation", times = nFiles),
-                            "nameBase2" = rep("../percent-CpG-coverage", times = nFiles),
-                            "sample.ID" = c(1:10))
-fileNameCov10 <- data.frame("nameBase"  = rep("../percent-CpG-methylation", times = nFiles),
-                            "nameBase2" = rep("../percent-CpG-coverage", times = nFiles),
-                            "sample.ID" = c(1:10))
-
-fileNameCov5$actualFileName1 <- paste(fileName$nameBase, "-Filtered", "-5xCoverage", "-Sample", fileName$sample.ID, ".jpeg", sep = "") #Create a new column for the full filename for filtered + 5x coverage + specific sample's percent CpG methylation plot
-fileNameCov5$actualFileName2 <- paste(fileName$nameBase2, "-Filtered", "-5xCoverage", "-Sample", fileName$sample.ID, ".jpeg", sep = "") #Create a new column for the full filename for filtered + 5x coverage + specific sample's percent CpG coverage plot
-
-fileNameCov10$actualFileName1 <- paste(fileName$nameBase, "-Filtered", "-10xCoverage", "-Sample", fileName$sample.ID, ".jpeg", sep = "") #Create a new column for the full filename for filtered + 5x coverage + specific sample's percent CpG methylation plot
-fileNameCov10$actualFileName2 <- paste(fileName$nameBase2, "-Filtered", "-10xCoverage", "-Sample", fileName$sample.ID, ".jpeg", sep = "") #Create a new column for the full filename for filtered + 5x coverage + specific sample's percent CpG coverage plot
-
-##########################################################################################################
-## Create plots
-
-setwd("E:/project-gigas_ploidy/figures")
-wd <- "E:/project-gigas_ploidy/figures"
-
-for(i in 1:nFiles) { #For each data file
-  jpeg(filename = fileNameCov5$actualFileName1[i], height = 1000, width = 1000) #Save file with designated name
-  methylKit::getMethylationStats(processedFilteredFilesCov5[[i]], plot = TRUE, both.strands = FALSE) #Get %CpG methylation information
-  dev.off() #Turn off plotting device 
-  } #Plot and save %CpG methylation information
-
-for(i in 1:nFiles) { #For each data file
-  jpeg(filename = fileNameCov5$actualFileName2[i], height = 1000, width = 1000) #Save file with designated name
-  methylKit::getCoverageStats(processedFilteredFilesCov5[[i]], plot = TRUE, both.strands = FALSE) #Get CpG coverage information
-  dev.off() #Turn off plotting device
-} #Plot and save CpG coverage information
-
-for(i in 1:nFiles) { #For each data file
-  jpeg(filename = fileNameCov10$actualFileName1[i], height = 1000, width = 1000) #Save file with designated name
-  methylKit::getMethylationStats(processedFilteredFilesCov10[[i]], plot = TRUE, both.strands = FALSE) #Get %CpG methylation information
-  dev.off() #Turn off plotting device 
-} #Plot and save %CpG methylation information
-
-for(i in 1:nFiles) { #For each data file
-  jpeg(filename = fileNameCov10$actualFileName2[i], height = 1000, width = 1000) #Save file with designated name
-  methylKit::getCoverageStats(processedFilteredFilesCov10[[i]], plot = TRUE, both.strands = FALSE) #Get CpG coverage information
-  dev.off() #Turn off plotting device
-} #Plot and save CpG coverage information
-
-
-##########################################################################################################
-### Comparative analysis
-
-### Combine all processed files into a single table. Use destrand = FALSE to not destrand. By default only bases with data in all samples will be kept
-
-methylationInformationFilteredCov1 <- methylKit::unite(processedFilteredFilesCov1, 
-                                                       destrand = FALSE,
-                                                       mc.cores = 2) 
-
-methylationInformationFilteredCov5 <- methylKit::unite(processedFilteredFilesCov5, 
-                                                       destrand = FALSE,
-                                                       mc.cores = 2) 
-
-methylationInformationFilteredCov10 <- methylKit::unite(processedFilteredFilesCov10, 
-                                                       destrand = FALSE,
-                                                       mc.cores = 2) 
-
-### Obtain Clustering Information
-clusteringInformationFilteredCov5 <- methylKit::clusterSamples(methylationInformationFilteredCov5, dist = "correlation", method = "ward", plot = FALSE) #Save cluster information as a new object
-clusteringInformationFilteredCov10 <- methylKit::clusterSamples(methylationInformationFilteredCov10, dist = "correlation", method = "ward", plot = FALSE) #Save cluster information as a new object
-
-
-### Generate plots in output folder
-# jpeg(filename = "Full-Sample-Pearson-Correlation-Plot-FilteredCov5.jpeg", height = 1000, width = 1000) #Save file with designated name
-# methylKit::getCorrelation(methylationInformationFilteredCov5, plot = TRUE) #Understand correlation between methylation patterns in different samples
-# dev.off()
-# 
-# jpeg(filename = "Full-Sample-CpG-Methylation-Clustering-FilteredCov5.jpeg", height = 1000, width = 1000) #Save file with designated name
-# methylKit::clusterSamples(methylationInformationFilteredCov5, dist = "correlation", method = "ward", plot = TRUE) #Cluster samples based on correlation coefficients
-# dev.off()
-# 
-# jpeg(filename = "Full-Sample-Methylation-PCA-FilteredCov5.jpeg", height = 1000, width = 1000) #Save file with designated name
-# methylKit::PCASamples(methylationInformationFilteredCov5) #Run a PCA analysis on percent methylation for all samples
-# dev.off() #Turn off plotting device
-# 
-# jpeg(filename = "Full-Sample-Methylation-Screeplot-FilteredCov5.jpeg", height = 1000, width = 1000) #Save file with designated name
-# methylKit::PCASamples(methylationInformationFilteredCov5, screeplot = TRUE) #Run the PCA analysis and plot variances against PC number in a screeplot
-# dev.off()
-
-
-##########################################################################################################
-## Differentially methylated loci (DML analysis)
-
-setwd(dirname(home)); getwd() # reset working directory to home dir
-
-# Identify DML
-
-#Code that was used to test calculateDiffMeth parameters
-differentialMethylationStatsTrtCov1   <- methylKit::calculateDiffMeth(methylationInformationFilteredCov1)
-differentialMethylationStatsTrtCov5   <- methylKit::calculateDiffMeth(methylationInformationFilteredCov5)
-differentialMethylationStatsTrtCov10  <- methylKit::calculateDiffMeth(methylationInformationFilteredCov10)
-
-# differentialMethylationStatsTreatment2 <- methylKit::calculateDiffMeth(methylationInformationFilteredCov5, overdispersion = "MN", test = "Chisq")
-# head(differentialMethylationStatsTreatment2) #Look at differential methylation statistics
-
-setwd('DML')
-write.csv(differentialMethylationStatsTrtCov10, "DML-stats-ploidy-Cov10.csv") #Save table as .csv
-
-diffMethStatsTreatment20 <- methylKit::getMethylDiff(differentialMethylationStatsTrtCov10, difference = 20, qvalue = 0.01) #Identify loci that are at least 20% different
-length(diffMethStatsTreatment20$chr) #Count the number of DML
-head(diffMethStatsTreatment20) #Confirm creation
-
-write.csv(diffMethStatsTreatment20, "DML-getMethylDiff-ploidy-Cov10-20.csv") #Save table as .csv
-
-diffMethStatsTreatment50 <- methylKit::getMethylDiff(differentialMethylationStatsTreatment, difference = 50, qvalue = 0.01) #Identify loci that are at least 50% different
-length(diffMethStatsTreatment50$chr) #Count the number of DML
-head(diffMethStatsTreatment50) #Confirm creation
-
-diffMethStatsTrt50Cov10 <- methylKit::getMethylDiff(differentialMethylationStatsTrtCov10, difference = 50, qvalue = 0.01) #Identify loci that are at least 50% different
-length(diffMethStatsTrt50Cov10$chr) #Count the number of DML
-head(diffMethStatsTrt50Cov10) #Confirm creation
-
-write.csv(diffMethStatsTrt50Cov10, "DML-getMethylDiff-temp-Cov10-50.csv") #Save table as .csv
-
-##### Hypermethylated DML
-diffMethStats50FilteredCov5Hyper <- methylKit::getMethylDiff(differentialMethylationStatsTreatment, difference = 50, qvalue = 0.01, type = "hyper") #Identify hypermethylated loci that are at least 50% different
-head(diffMethStats50FilteredCov5Hyper) #Confirm creation
-write.csv(diffMethStats50FilteredCov5Hyper, "output/DML-getMethylDiff-temp-Cov5-50-hyper.csv") #Save table as .csv
-
-##### Hypomethylated DML
-diffMethStats50FilteredCov5Hypo <- methylKit::getMethylDiff(differentialMethylationStatsTreatment, difference = 50, qvalue = 0.01, type = "hypo") #Identify hypermethylated loci that are at least 50% different
-head(diffMethStats50FilteredCov5Hypo) #Confirm creation
-write.csv(diffMethStats50FilteredCov5Hypo, "output/DML-getMethylDiff-temp-Cov5-50-hypo.csv") #Save table as .csv
-
-#### DML distribution figure
-
-##### Calculate distribution of DML across chromosomes
-DMLchrCounts <-as.data.frame(table(diffMethStatsTreatment50$chr)) #Count the number of DML/chromosome
-DMLchrCounts <- DMLchrCounts[-c(11:length(DMLchrCounts$Var1)),]
-prefix <- "Chr"
-suffix <- seq(1:length(DMLchrCounts$Var1))
-my_names <- paste(prefix,suffix,sep="")
-DMLchrCounts$chr <- my_names
-DMLchrCounts <- DMLchrCounts[,-1] #Remove column with chromosome RefSeq ID
-DMLchrCounts <- DMLchrCounts[,c(2,1)] #Reorganize columns
-colnames(DMLchrCounts) <- c("chr", "DMLCount") #Rename columns
-head(DMLchrCounts) #Confirm formatting
-write.csv(DMLchrCounts, "output/DML-per-Chromosome.csv", row.names = FALSE, quote = FALSE) #Save file
-
-##### [*C. gigas* genome information from NCBI](https://www.ncbi.nlm.nih.gov/genome/?term=pacific+oyster)
-
-DMLchrCounts$geneCount <- c(3425, 3526, 3796, 3124, 3915, 4129, 4097, 3617, 1829, 3713) #Create column with number of gene sequences in each chromosome
-DMLchrCounts$DMLbyGenes <- (DMLchrCounts$DMLCount / DMLchrCounts$geneCount)*100
-head(DMLchrCounts) #Confirm column creation
-
-DMLchrCounts$chrLengthMb <- c(55.79, 73.22, 58.32, 53.13, 73.55, 60.15, 62.11, 58.46, 37.09, 57.54) #Create column with number Mb in each chromosome
-DMLchrCounts$DMLbyChrLength <- (DMLchrCounts$DMLCount / DMLchrCounts$chrLengthMb) #Normalize DML counts by chr length in Mb. Axes should indicate that these counts are multiplied by 10e-6
-head(DMLchrCounts) #Confirm column creation
-
-DMLchrCounts$chrCpGCounts <- c(1394962, 1237469, 1568195, 1200917, 2008680, 1121671, 1251184, 1633946, 2300335, 740913) #Create column with number of CpGs in each chromosome
-DMLchrCounts$DMLbyChrCpG <- (DMLchrCounts$DMLCount / DMLchrCounts$chrCpGCounts) #Normalize DML counts by number of CpGs in each chromosome
-range(DMLchrCounts$DMLbyChrCpG) #Look at range of values
-head(DMLchrCounts) #Confirm column creation
-
-# 
-# ```{bash}
-# #Count the number of CGs in each chromosme (excluding MT chromosome)
-# grep "NC_047559.1" ../2019-05-13-Generating-Genome-Feature-Tracks/C_gigas-3.0_CG-motif.bed | wc -l
-# grep "NC_047560.1" ../2019-05-13-Generating-Genome-Feature-Tracks/C_virginica-3.0_CG-motif.bed | wc -l
-# grep "NC_035782.1" ../2019-05-13-Generating-Genome-Feature-Tracks/C_virginica-3.0_CG-motif.bed | wc -l
-# grep "NC_035783.1" ../2019-05-13-Generating-Genome-Feature-Tracks/C_virginica-3.0_CG-motif.bed | wc -l
-# grep "NC_035784.1" ../2019-05-13-Generating-Genome-Feature-Tracks/C_virginica-3.0_CG-motif.bed | wc -l
-# grep "NC_035785.1" ../2019-05-13-Generating-Genome-Feature-Tracks/C_virginica-3.0_CG-motif.bed | wc -l
-# grep "NC_035786.1" ../2019-05-13-Generating-Genome-Feature-Tracks/C_virginica-3.0_CG-motif.bed | wc -l
-# grep "NC_035787.1" ../2019-05-13-Generating-Genome-Feature-Tracks/C_virginica-3.0_CG-motif.bed | wc -l
-# grep "NC_035788.1" ../2019-05-13-Generating-Genome-Feature-Tracks/C_virginica-3.0_CG-motif.bed | wc -l
-# grep "NC_035789.1" ../2019-05-13-Generating-Genome-Feature-Tracks/C_virginica-3.0_CG-motif.bed | wc -l
-# ```
-
-### Need to update these numbers for c.gigas
-DMLchrCounts$chrCpGCounts <- c(1394962, 1237469, 1568195, 1200917, 2008680, 1121671, 1251184, 1633946, 2300335, 740913) #Create column with number of CpGs in each chromosome
-DMLchrCounts$DMLbyChrCpG <- (DMLchrCounts$DMLCount / DMLchrCounts$chrCpGCounts) #Normalize DML counts by number of CpGs in each chromosome
-range(DMLchrCounts$DMLbyChrCpG) #Look at range of values
-head(DMLchrCounts) #Confirm column creation
-
-### Create Figure
-
-pdf("output/2021-05-25-DML-and-Gene-Distribution.pdf", height = 8.5, width = 12) #Save figure as a pdf
-par(mar = c(5,7,2,10)) #Change figure boundaries
-DMLbarplot <- barplot(as.matrix(t(DMLchrCounts$DMLbyChrCpG)),
-                      axes = FALSE, 
-                      names.arg = DMLchrCounts$chr,
-                      cex.names = 1.5,
-                      xlim = c(0.7,11.5),
-                      ylim = c(0,60e-05),
-                      col = "grey80") #Create a barplot and save as a new object. Use axes = FALSE to remove the y-axis and names.arg to set labels on the x-axis. The object contains x coordinates for bars, so xlim is set at 12 to compensate for maximum value of 11.5
-mtext(side = 1, "Chromosome", las=1, line = 3, cex = 1.5) #Add x-axis label
-axis(side = 2, line = 1.5, at = seq(0, 60e-05, by = 10e-05), las = 2, col = "grey80", cex.axis = 1.2) #Add y-axis for DML counts
-mtext(side = 2, "Number DML per 10,000 CpGs", line = 5, cex = 1.5) #Add y-axis label for DML counts
-par(new = TRUE) #Create a new plot
-plot(x = DMLbarplot,
-     y = DMLchrCounts$geneCount,
-     type = "b",
-     axes = FALSE, xlab = "", ylab = "", xaxs = "i", yaxs = "i",
-     pch = 16, col = "grey20",
-     xlim = c(0,12), ylim = c(0,6500)) #Plot points and lines (type = "b") for gene count by chromosome. Use the coordinates from DMLbarplot (x = DMLbarplot) and set xlim = (0,12) so plots are lined up. Use axes = FALSE to remove both axes. Remove x and y lables (xlab = ""; ylab = ""). Set ylim = (0,6500) to account for max y-values. Use xaxs and yxaxs to remove space between axes.
-axis(side = 4, line = 1.5, at = seq(0, 6500, by = 500), las = 2, col = "grey80", cex.axis = 1.2) #Add y-axis for gene sequence counts
-mtext(side = 4, "Number of Genes", line = 6, cex = 1.5) #Add y-axis label for gene sequence counts
-dev.off() #Turn off plotting device
-
-
-###### Principal Component Analyses
-
-sample.IDs <- list("1", "2", "3", "4", "5", "6", "7", "8", "9", "10") #Create list of sample IDs
-treatmentSpecification <- c(rep(0, times = 5), rep(1, times = 5)) 
-
-plotCustomization <- data.frame(sample = 1:10,
-                                treatmentSpecification) #Create dataframe with sample treatment information
-head(plotCustomization) #Confirm dataframe creation
-
-allDataPCA <- PCASamples(methylationInformationFilteredCov5, obj.return = TRUE) #Run a PCA analysis on percent methylation for all samples. methylKit uses prcomp to create the PCA matrix
-summary(allDataPCA) #Look at summary statistics. The first PC explains 15.6% of variation, the second PC explains 12.1% of variation
-
-
-RColorBrewer::display.brewer.all() #Show all RColorBrewer palettes. I will choose greens.
-plotColors <- rev(RColorBrewer::brewer.pal(5, "GnBu")) #Create a color palette for the barplots. Use 5 green-blue shades from RColorBrewer. Reverse theorder so the darkest shade is used first.
-
-pdf("output/2021-05-26-All-Data-PCA.pdf", width = 11, height = 8.5)
-par(mar = c(5, 5, 1, 1)) #Specify inner and outer margins
-fig.allDataPCA <- ordiplot(allDataPCA, choices = c(1, 2), type = "none", display = "sites", cex = 0.5, xlab = "", ylab = "", xaxt = "n", yaxt = "n") #Use ordiplot to create base biplot. Do not add any points
-points(fig.allDataPCA, "sites", col = c(rep(plotColors[2], times = 5), rep(plotColors[4], times = 5)), pch = c(rep(16, times = 5), rep(17, times = 5)), cex = 3) #Add each sample. Darker samples are ambient, lighter samples are elevated pCO2
-#Add multiple white boxes on top of the default black box to manually change the color
-box(col = "white")
-box(col = "white")
-box(col = "white")
-box(col = "white")
-box(col = "white")
-box(col = "white")
-box(col = "white")
-box(col = "white")
-box(col = "white")
-box(col = "white")
-ordiellipse(allDataPCA, plotCustomization$treatment, show.groups = "1", col = plotColors[4]) #Add confidence ellipse around the samples in elevated pCO2
-ordiellipse(allDataPCA, plotCustomization$treatment, show.groups = "0", col = plotColors[2]) #Add confidence ellipse around the samples in ambient pCO2
-axis(side =  1, labels = TRUE, col = "grey80", cex.axis = 1.7) #Add x-axis
-mtext(side = 1, text = "PC 1 (15.6%)", line = 3, cex = 1.5) #Add x-axis label
-axis(side =  2, labels = TRUE, col = "grey80", cex.axis = 1.7) #Add y-axis
-mtext(side = 2, text = "PC 2 (12.1%)", line = 3, cex = 1.5) #Add y-axis label
-legend("topleft", 
-       pch = c(16, 17), 
-       legend = c("diploid", "triploid"), 
-       col = c(plotColors[2], plotColors[4]), 
-       cex = 1.7, bty = "n") #Add a legend with information about ambient and elevated samples
-dev.off()
-
-####### DML
-
-# The first thing I need to do is subset the data so it only includes DML. Then, I can use similar code to what I used above to create PCA plots.
-
-DMLPositions <- rep(0, times = length(diffMethStatsTreatment50$chr)) #Create an empty vector with 598 places to store row numbers
-for (i in 1:length(DMLPositions)) {
-  DMLPositions[i] <- which(getData(diffMethStatsTreatment50)$start[i] == getData(methylationInformationFilteredCov5)$start)
-} #For each DML, save the row number where that DML is found in methylationInformationFilteredCov5
-tail(DMLPositions) #Confirm vector was created
-
-DMLMatrix <- methylationInformationFilteredCov5[DMLPositions,] #Subset methylationInformationFilteredCov5Destrand to only include DML and save as a new methylBase object
-sum((DMLMatrix$start) == (diffMethStatsTreatment50$start)) == length(diffMethStatsTreatment50$start) #Confirm that start columns are identical. If they are identical, the sum of all TRUE statements should equal the length of the original methylBase object
-tail(DMLMatrix) #Confirm methylBase object creation
-
-DMLDataPCA <- PCASamples(DMLMatrix, obj.return = TRUE) #Run a PCA analysis on percent methylation for all samples. methylKit uses prcomp to create the PCA matrix
-summary(DMLDataPCA) #Look at summary statistics. The first PC explains 47.6% of variation, the second PC explains 9.5% of variation
-
-
-pdf("output/2021-05-26-DML-Only-PCA.pdf", width = 11, height = 8.5)
-par(mar = c(5, 5, 1, 1)) #Specify inner and outer margins
-fig.DMLDataPCA <- ordiplot(DMLDataPCA, choices = c(1, 2), type = "none", display = "sites", cex = 0.5, xlab = "", ylab = "", xaxt = "n", yaxt = "n") #Use ordiplot to create base biplot. Do not add any points
-points(fig.DMLDataPCA, "sites", col = c(rep(plotColors[2], times = 5), rep(plotColors[4], times = 5)), pch = c(rep(16, times = 5), rep(17, times = 5)), cex = 3) #Add each sample. Darker samples are ambient, lighter samples are elevated pCO2
-#Add multiple white boxes on top of the default black box to manually change the color
-box(col = "white")
-box(col = "white")
-box(col = "white")
-box(col = "white")
-box(col = "white")
-box(col = "white")
-box(col = "white")
-box(col = "white")
-box(col = "white")
-box(col = "white")
-ordiellipse(DMLDataPCA, plotCustomization$treatment, show.groups = "1", col = plotColors[4]) #Add confidence ellipse around the samples in elevated pCO2
-ordiellipse(DMLDataPCA, plotCustomization$treatment, show.groups = "0", col = plotColors[2]) #Add confidence ellipse around the samples in ambient pCO2
-axis(side =  1, labels = TRUE, col = "grey80", cex.axis = 1.7) #Add x-axis
-mtext(side = 1, text = "PC 1 (61.8%)", line = 3, cex = 1.5) #Add x-axis label
-axis(side =  2, labels = TRUE, col = "grey80", cex.axis = 1.7) #Add y-axis
-mtext(side = 2, text = "PC 2 (7.5%)", line = 3, cex = 1.5) #Add y-axis label
-legend("topright", 
-       pch = c(16, 17), 
-       legend = c("diploid", "triploid"), 
-       col = c(plotColors[2], plotColors[4]), 
-       cex = 1.7, bty = "n") #Add a legend with information about ambient and elevated samples
-dev.off()
-
-#### Multipanel plot
-
-pdf("output/2021-05-26-PCA-Multpanel.pdf", height = 8.5, width = 11) #Save plot
-par(mfrow = c(1, 2), oma = c(5, 2, 2, 0), mar = c(0, 3, 0, 5)) #Set up parameters for multipanel plot
-#All CpG Loci
-fig.allDataPCA <- ordiplot(allDataPCA, choices = c(1, 2), type = "none", display = "sites", cex = 0.5, xlim = c(-400, 200), xlab = "", ylab = "", xaxt = "n", yaxt = "n") #Use ordiplot to create base biplot. Do not add any points
-points(fig.allDataPCA, "sites", col = c(rep(plotColors[2], times = 5), rep(plotColors[4], times = 5)), pch = c(rep(16, times = 5), rep(17, times = 5)), cex = 3) #Add each sample. Darker samples are ambient, lighter samples are elevated pCO2
-#Add multiple white boxes on top of the default black box to manually change the color
-box(col = "white")
-box(col = "white")
-box(col = "white")
-box(col = "white")
-box(col = "white")
-box(col = "white")
-box(col = "white")
-box(col = "white")
-box(col = "white")
-box(col = "white")
-ordiellipse(allDataPCA, plotCustomization$treatment, show.groups = "1", col = plotColors[4]) #Add confidence ellipse around the samples in elevated pCO2
-ordiellipse(allDataPCA, plotCustomization$treatment, show.groups = "0", col = plotColors[2]) #Add confidence ellipse around the samples in ambient pCO2
-axis(side =  1, at = seq(-400, 200, 200), col = "grey80", cex.axis = 1.7) #Add x-axis
-mtext(side = 1, text = "PC 1 (15.6%)", line = 3, cex = 1.5) #Add x-axis label
-axis(side =  2, labels = TRUE, col = "grey80", cex.axis = 1.7) #Add y-axis
-mtext(side = 2, text = "PC 2 (18.1%)", line = 3, cex = 1.5) #Add y-axis label
-mtext(side = 3, line = -5, adj = c(-100,0), text = "    a. All CpG Loci", cex = 1.5)
-
-fig.DMLDataPCA <- ordiplot(DMLDataPCA, choices = c(1, 2), type = "none", display = "sites", cex = 0.5, xlim = c(-20,20), ylim = c(-10,20), xlab = "", ylab = "", xaxt = "n", yaxt = "n") #Use ordiplot to create base biplot. Do not add any points
-points(fig.DMLDataPCA, "sites", col = c(rep(plotColors[2], times = 5), rep(plotColors[4], times = 5)), pch = c(rep(16, times = 5), rep(17, times = 5)), cex = 3) #Add each sample. Darker samples are ambient, lighter samples are elevated pCO2
-#Add multiple white boxes on top of the default black box to manually change the color
-box(col = "white")
-box(col = "white")
-box(col = "white")
-box(col = "white")
-box(col = "white")
-box(col = "white")
-box(col = "white")
-box(col = "white")
-box(col = "white")
-box(col = "white")
-ordiellipse(DMLDataPCA, plotCustomization$treatment, show.groups = "1", col = plotColors[4]) #Add confidence ellipse around the samples in elevated pCO2
-ordiellipse(DMLDataPCA, plotCustomization$treatment, show.groups = "0", col = plotColors[2]) #Add confidence ellipse around the samples in ambient pCO2
-axis(side =  1, labels = TRUE, col = "grey80", cex.axis = 1.7) #Add x-axis
-mtext(side = 1, text = "PC 1 (61.8%)", line = 3, cex = 1.5) #Add x-axis label
-axis(side =  2, labels = TRUE, col = "grey80", cex.axis = 1.7) #Add y-axis
-mtext(side = 2, text = "PC 2 (7.5%)", line = 3, cex = 1.5) #Add y-axis label
-mtext(side = 3, line = -5, adj = c(-100, 0), text = "    b. DML", cex = 1.5) #Add test category
-legend(x = 0, y = -22, 
-       pch = c(16, 17), 
-       legend = c("Control", "Elevated"), 
-       col = c(plotColors[2], plotColors[4]),
-       y.intersp = 1, x.intersp = 1,
-       cex = 1.7, bty = "n") #Add a legend with information about ambient and elevated samples
-dev.off()
-
-######################################################################################################
-### Heat Map
-
-percMethDML <- percMethylation(DMLMatrix, rowids = TRUE) #Get percent methylation for all samples at DML. Include row IDs (chr, start, end) information
-head(percMethDML) #Confirm percent methylation matrix was created
-
-pheatmap(percMethDML, color = rev(plotColors),
-         cluster_rows = TRUE, clustering_distance_rows = "euclidean", treeheight_row = 70, show_rownames = FALSE,
-         cluster_cols = TRUE, clustering_distance_cols = "euclidean", treeheight_col = 40, show_colnames = FALSE,
-         annotation_col = data.frame(pCO2 = factor(rep(c("Ambient","Treatment"), each = 5))),
-         annotation_colors = list(pCO2 = c(Ambient = "grey90", Treatment = "grey10")), 
-         annotation_legend = FALSE, annotation_names_col = FALSE,
-         legend = TRUE) #Create heatmap using pheatmap using percMethDML and plotColors color scheme. Cluster rows and columns using euclidean distances. Adjust the dendogram tree heights and do not show any row or column names. Create a dataframe with treatment information using annotation_col. Use annotation_colors to indicate colors for treatment ("grey90") and ambient ("grey10") samples. Do not include an annotation_legend or name for annotations (annotatino_names_col). Include a legend.
-
-pdf("2021-05-27-DML-Only-Heatmap.pdf", height = 8.5, width = 11)
-par(oma = c(0, 1, 0, 0)) #Adjust outer margins
-heatmap.2(percMethDML, col = rev(plotColors), scale = "none", margins = c(1,1),
-          trace = "none", tracecol = "black",
-          labRow = FALSE, labCol = FALSE, 
-          ColSideColors = c(rep("grey90", times = 5), rep("grey10", times = 5)),
-          key = TRUE, keysize = 1.8, density.info = "density", key.title = "", key.xlab = "% Methylation", key.ylab = "",
-          key.par = list(cex.lab = 2.0, cex.axis = 1.5)) #Create heatmap using heatmap.2 from gplots package using percMethDML data. Use plotColors but do not scale data, label rows, or label columns. Use ColSideColors to indicate colors for treatment and ambient samples. Add a legend using key, and adjust keysize. Have key display density data with density.info. Do not add a key title or y-axis label, and label x axis with key.xlab.
-mtext("Density", cex = 1.6, las = 3, adj = 0.8, padj = -29) #Manually add y-axis label for key since heatmap.2 doesn't let you change font size
-dev.off()
-
-
-############################################################################################################
-### Convert DML list to Bed files
-
-DML <- data.frame(diffMethStatsTreatment50$chr,
-                 diffMethStatsTreatment50$start,
-                 diffMethStatsTreatment50$end,
-                 diffMethStatsTreatment50$meth.diff) # arrange(chr, start) %>% #Join + and - strand information to be saved as a BED file, and avoid writing information in scientific notation
-write_delim(DML, "2021-05-28-DML-Locations-treatment-50.bed",  delim = '\t', col_names = FALSE) #Save data as a BED file
+#!/usr/bin/env Rscript
+
+options(scipen = 999)
+
+parse_arguments <- function(arguments) {
+  values <- list()
+  for (argument in arguments) {
+    if (!grepl("^--[^=]+=.*$", argument)) {
+      stop(sprintf("Invalid argument '%s'; expected --name=value.", argument), call. = FALSE)
+    }
+    parts <- strsplit(sub("^--", "", argument), "=", fixed = TRUE)[[1]]
+    key <- parts[[1]]
+    value <- paste(parts[-1], collapse = "=")
+    if (!is.null(values[[key]])) {
+      stop(sprintf("Argument '--%s' was supplied more than once.", key), call. = FALSE)
+    }
+    values[[key]] <- value
+  }
+
+  required <- c(
+    "metadata", "cov-dir", "cov-template", "output-dir", "assembly",
+    "min-read-coverage", "min-analysis-coverage", "high-coverage-percentile",
+    "normalize-coverage", "require-all-samples", "overdispersion", "test",
+    "adjust", "effect", "max-q", "differences", "r-version",
+    "bioconductor-version", "methylkit-version", "chunk-size", "mc-cores",
+    "preflight-only"
+  )
+  missing <- setdiff(required, names(values))
+  unexpected <- setdiff(names(values), required)
+  if (length(missing)) {
+    stop(sprintf("Missing arguments: %s", paste(paste0("--", missing), collapse = ", ")), call. = FALSE)
+  }
+  if (length(unexpected)) {
+    stop(sprintf("Unknown arguments: %s", paste(paste0("--", unexpected), collapse = ", ")), call. = FALSE)
+  }
+  values
+}
+
+parse_flag <- function(value, name) {
+  if (!value %in% c("true", "false")) {
+    stop(sprintf("--%s must be true or false.", name), call. = FALSE)
+  }
+  identical(value, "true")
+}
+
+parse_number <- function(value, name, integer = FALSE, minimum = -Inf, maximum = Inf) {
+  result <- suppressWarnings(as.numeric(value))
+  if (length(result) != 1L || is.na(result) || result < minimum || result > maximum) {
+    stop(sprintf("--%s is outside its valid range.", name), call. = FALSE)
+  }
+  if (integer && result != floor(result)) {
+    stop(sprintf("--%s must be an integer.", name), call. = FALSE)
+  }
+  if (integer) as.integer(result) else result
+}
+
+validate_cov_preview <- function(path, seq_id, preview_lines = 100L) {
+  lines <- readLines(path, n = preview_lines, warn = FALSE)
+  if (!length(lines)) {
+    stop(sprintf("COV file is empty for %s: %s", seq_id, path), call. = FALSE)
+  }
+  fields <- strsplit(lines, "\t", fixed = TRUE)
+  field_counts <- lengths(fields)
+  if (any(field_counts != 6L)) {
+    stop(
+      sprintf("COV preview for %s must have exactly six tab-separated columns.", seq_id),
+      call. = FALSE
+    )
+  }
+  values <- do.call(rbind, fields)
+  if (any(!nzchar(values[, 1])) || any(grepl("[[:space:]]", values[, 1]))) {
+    stop(sprintf("COV preview contains an invalid chromosome for %s.", seq_id), call. = FALSE)
+  }
+  numeric_values <- suppressWarnings(matrix(
+    as.numeric(values[, 2:6, drop = FALSE]),
+    nrow = nrow(values),
+    ncol = 5L
+  ))
+  if (anyNA(numeric_values) || any(!is.finite(numeric_values))) {
+    stop(sprintf("COV preview contains a non-numeric value for %s.", seq_id), call. = FALSE)
+  }
+
+  start <- numeric_values[, 1]
+  end <- numeric_values[, 2]
+  percent <- numeric_values[, 3]
+  methylated <- numeric_values[, 4]
+  unmethylated <- numeric_values[, 5]
+  integer_fields <- cbind(start, end, methylated, unmethylated)
+  if (any(integer_fields != floor(integer_fields)) || any(integer_fields < 0)) {
+    stop(sprintf("COV coordinates and counts must be non-negative integers for %s.", seq_id), call. = FALSE)
+  }
+  if (any(end - start != 2)) {
+    stop(sprintf("Merged CpG intervals must be zero-based, half-open, and two bases wide for %s.", seq_id), call. = FALSE)
+  }
+  if (any(percent < 0 | percent > 100) || any(methylated + unmethylated <= 0)) {
+    stop(sprintf("COV percentages or coverage counts are invalid for %s.", seq_id), call. = FALSE)
+  }
+  recalculated <- 100 * methylated / (methylated + unmethylated)
+  if (any(abs(percent - recalculated) > 0.00001)) {
+    stop(sprintf("COV percentages disagree with methylated/unmethylated counts for %s.", seq_id), call. = FALSE)
+  }
+  invisible(TRUE)
+}
+
+write_bed <- function(data, path) {
+  if (!nrow(data)) {
+    file.create(path)
+    return(invisible(path))
+  }
+  if (any(data$start < 0) || any(data$end <= data$start)) {
+    stop(sprintf("Cannot write invalid BED coordinates to %s.", path), call. = FALSE)
+  }
+  bed <- data.frame(chr = data$chr, start = data$start, end = data$end)
+  data.table::fwrite(bed, path, sep = "\t", col.names = FALSE, quote = FALSE)
+  invisible(path)
+}
+
+main <- function() {
+  args <- parse_arguments(commandArgs(trailingOnly = TRUE))
+  metadata_path <- normalizePath(args[["metadata"]], mustWork = TRUE)
+  cov_directory <- normalizePath(args[["cov-dir"]], mustWork = TRUE)
+  cov_template <- args[["cov-template"]]
+  output_directory <- args[["output-dir"]]
+  preflight_only <- parse_flag(args[["preflight-only"]], "preflight-only")
+  normalize_coverage <- parse_flag(args[["normalize-coverage"]], "normalize-coverage")
+  require_all_samples <- parse_flag(args[["require-all-samples"]], "require-all-samples")
+  min_read_coverage <- parse_number(args[["min-read-coverage"]], "min-read-coverage", TRUE, 1)
+  min_analysis_coverage <- parse_number(args[["min-analysis-coverage"]], "min-analysis-coverage", TRUE, 1)
+  high_coverage_percentile <- parse_number(
+    args[["high-coverage-percentile"]], "high-coverage-percentile", FALSE, 0, 100
+  )
+  max_q <- parse_number(args[["max-q"]], "max-q", FALSE, 0, 1)
+  differences <- suppressWarnings(as.numeric(strsplit(args[["differences"]], ",", fixed = TRUE)[[1]]))
+  if (!length(differences) || anyNA(differences) || any(differences <= 0 | differences > 100)) {
+    stop("--differences must be a comma-separated list of values in (0, 100].", call. = FALSE)
+  }
+  if (anyDuplicated(differences)) {
+    stop("--differences must not contain duplicates.", call. = FALSE)
+  }
+  chunk_size <- parse_number(args[["chunk-size"]], "chunk-size", TRUE, 1)
+  mc_cores <- parse_number(args[["mc-cores"]], "mc-cores", TRUE, 1)
+
+  if (!grepl("{seq_id}", cov_template, fixed = TRUE)) {
+    stop("--cov-template must contain the literal placeholder {seq_id}.", call. = FALSE)
+  }
+  if (dir.exists(output_directory) && length(list.files(output_directory, all.files = TRUE, no.. = TRUE))) {
+    stop(sprintf("Output directory already exists and is not empty: %s", output_directory), call. = FALSE)
+  }
+  dir.create(output_directory, recursive = TRUE, showWarnings = FALSE)
+  output_directory <- normalizePath(output_directory, mustWork = TRUE)
+  run_id <- basename(output_directory)
+  if (!grepl("^[A-Za-z0-9._-]+$", run_id)) {
+    stop("The output-directory basename must be a safe run identifier.", call. = FALSE)
+  }
+
+  metadata <- read.csv(metadata_path, stringsAsFactors = FALSE, check.names = FALSE)
+  required_metadata <- c(
+    "seq_id", "library_name", "tissue", "ploidy", "desiccation", "heat_shock",
+    "library_kit", "sra_bioproject", "sra_accession"
+  )
+  if (!identical(names(metadata), required_metadata)) {
+    stop("Canonical WGBS metadata columns or column order are invalid.", call. = FALSE)
+  }
+  if (nrow(metadata) != 10L || anyDuplicated(metadata$seq_id) || anyNA(metadata)) {
+    stop("Canonical metadata must contain ten complete, unique WGBS samples.", call. = FALSE)
+  }
+  if (!all(metadata$ploidy %in% c("diploid", "triploid")) ||
+      !all(metadata$heat_shock %in% c("no", "yes"))) {
+    stop("Ploidy and heat-shock metadata contain unsupported values.", call. = FALSE)
+  }
+
+  treatment <- ifelse(metadata$ploidy == "triploid", 1L, 0L)
+  heat_shock <- ifelse(metadata$heat_shock == "yes", 1L, 0L)
+  design <- stats::model.matrix(~ treatment + heat_shock)
+  if (qr(design)$rank != ncol(design)) {
+    stop("The primary treatment/covariate design matrix is rank deficient.", call. = FALSE)
+  }
+  if (any(table(treatment) < 2L)) {
+    stop("Both ploidy groups must retain biological replication.", call. = FALSE)
+  }
+
+  cov_names <- vapply(
+    metadata$seq_id,
+    function(seq_id) gsub("{seq_id}", seq_id, cov_template, fixed = TRUE),
+    character(1)
+  )
+  if (anyDuplicated(cov_names)) {
+    stop("The COV filename template does not produce unique sample files.", call. = FALSE)
+  }
+  cov_paths <- file.path(cov_directory, cov_names)
+  missing_files <- cov_names[!file.exists(cov_paths)]
+  if (length(missing_files)) {
+    stop(
+      sprintf("Missing required COV files: %s", paste(missing_files, collapse = ", ")),
+      call. = FALSE
+    )
+  }
+  file_details <- file.info(cov_paths)
+  if (any(file_details$isdir) || anyNA(file_details$size) || any(file_details$size <= 0)) {
+    stop("Every required COV input must be a non-empty regular file.", call. = FALSE)
+  }
+  invisible(Map(validate_cov_preview, cov_paths, metadata$seq_id))
+
+  input_manifest <- data.frame(
+    seq_id = metadata$seq_id,
+    library_name = metadata$library_name,
+    ploidy = metadata$ploidy,
+    heat_shock = metadata$heat_shock,
+    cov_file = cov_names,
+    bytes = file_details$size,
+    stringsAsFactors = FALSE
+  )
+  write.csv(input_manifest, file.path(output_directory, "cov_input_manifest.csv"), row.names = FALSE)
+  write.csv(metadata, file.path(output_directory, "metadata_snapshot.csv"), row.names = FALSE)
+
+  parameter_manifest <- data.frame(
+    parameter = c(
+      "run_id", "assembly", "input_coordinates", "bed_coordinates", "treatment_0", "treatment_1",
+      "covariate", "meth_diff_direction", "min_read_coverage", "min_analysis_coverage",
+      "high_coverage_percentile", "normalize_coverage", "require_all_samples",
+      "overdispersion", "test", "adjust", "effect", "maximum_q_value",
+      "minimum_absolute_differences", "chunk_size", "mc_cores"
+    ),
+    value = c(
+      run_id, args[["assembly"]], "zero-based half-open", "zero-based half-open", "diploid", "triploid",
+      "heat_shock (no=0, yes=1)", "positive means triploid > diploid, adjusted for heat shock",
+      min_read_coverage, min_analysis_coverage, high_coverage_percentile,
+      normalize_coverage, require_all_samples, args[["overdispersion"]], args[["test"]],
+      args[["adjust"]], args[["effect"]], max_q, paste(differences, collapse = ","),
+      chunk_size, mc_cores
+    ),
+    stringsAsFactors = FALSE
+  )
+  write.csv(parameter_manifest, file.path(output_directory, "analysis_parameters.csv"), row.names = FALSE)
+
+  message(sprintf("COV preflight passed for %d canonical samples.", nrow(metadata)))
+  if (preflight_only) {
+    message(sprintf("Preflight outputs written to %s", output_directory))
+    return(invisible(0L))
+  }
+
+  if (as.character(getRversion()) != args[["r-version"]]) {
+    stop(
+      sprintf("Expected R %s; observed R %s.", args[["r-version"]], getRversion()),
+      call. = FALSE
+    )
+  }
+  if (!requireNamespace("BiocManager", quietly = TRUE) ||
+      as.character(BiocManager::version()) != args[["bioconductor-version"]]) {
+    stop(sprintf("Expected Bioconductor %s.", args[["bioconductor-version"]]), call. = FALSE)
+  }
+  if (!requireNamespace("methylKit", quietly = TRUE)) {
+    stop("The pinned methylKit package is not installed.", call. = FALSE)
+  }
+  if (as.character(utils::packageVersion("methylKit")) != args[["methylkit-version"]]) {
+    stop(
+      sprintf(
+        "Expected methylKit %s; observed %s.",
+        args[["methylkit-version"]], utils::packageVersion("methylKit")
+      ),
+      call. = FALSE
+    )
+  }
+  if (!requireNamespace("data.table", quietly = TRUE)) {
+    stop("methylKit's data.table dependency is unavailable.", call. = FALSE)
+  }
+
+  database_directory <- file.path(output_directory, "methylkit_db")
+  database_subdirectories <- file.path(
+    database_directory,
+    c("raw", "filtered", "normalized", "united", "differential")
+  )
+  invisible(lapply(
+    database_subdirectories,
+    dir.create,
+    recursive = TRUE,
+    showWarnings = FALSE
+  ))
+  processed <- methylKit::methRead(
+    as.list(cov_paths),
+    sample.id = as.list(metadata$seq_id),
+    assembly = args[["assembly"]],
+    treatment = treatment,
+    pipeline = "bismarkCoverage",
+    header = FALSE,
+    context = "CpG",
+    resolution = "base",
+    mincov = min_read_coverage,
+    dbtype = "tabix",
+    dbdir = file.path(database_directory, "raw")
+  )
+
+  filtered <- methylKit::filterByCoverage(
+    processed,
+    lo.count = min_analysis_coverage,
+    lo.perc = NULL,
+    hi.count = NULL,
+    hi.perc = high_coverage_percentile,
+    chunk.size = chunk_size,
+    save.db = TRUE,
+    suffix = "cov_filtered",
+    dbdir = file.path(database_directory, "filtered")
+  )
+  if (normalize_coverage) {
+    filtered <- methylKit::normalizeCoverage(
+      filtered,
+      method = "median",
+      chunk.size = chunk_size,
+      save.db = TRUE,
+      suffix = "normalized",
+      dbdir = file.path(database_directory, "normalized")
+    )
+  }
+
+  united <- methylKit::unite(
+    filtered,
+    destrand = FALSE,
+    min.per.group = if (require_all_samples) NULL else 2L,
+    chunk.size = chunk_size,
+    mc.cores = mc_cores,
+    save.db = TRUE,
+    suffix = "all_samples",
+    dbdir = file.path(database_directory, "united")
+  )
+  if (!identical(methylKit::getSampleID(united), metadata$seq_id)) {
+    stop("methylKit sample order changed before model fitting.", call. = FALSE)
+  }
+
+  differential <- methylKit::calculateDiffMeth(
+    united,
+    covariates = data.frame(heat_shock = heat_shock),
+    overdispersion = args[["overdispersion"]],
+    adjust = args[["adjust"]],
+    effect = args[["effect"]],
+    test = args[["test"]],
+    mc.cores = mc_cores,
+    chunk.size = chunk_size,
+    save.db = TRUE,
+    suffix = "ploidy_adjusted_heat",
+    dbdir = file.path(database_directory, "differential")
+  )
+
+  all_stats <- data.table::as.data.table(methylKit::getData(differential))
+  required_stats <- c("chr", "start", "end", "pvalue", "qvalue", "meth.diff")
+  if (!all(required_stats %in% names(all_stats))) {
+    stop("The complete methylKit statistics table lacks required fields.", call. = FALSE)
+  }
+  if (anyDuplicated(all_stats[, c("chr", "start", "end"), with = FALSE])) {
+    stop("The complete statistics table contains duplicate genomic coordinates.", call. = FALSE)
+  }
+  if (any(!is.finite(all_stats$meth.diff)) || any(abs(all_stats$meth.diff) > 100)) {
+    stop("The complete statistics table contains invalid methylation differences.", call. = FALSE)
+  }
+  data.table::setorder(all_stats, chr, start, end)
+  model_tag <- paste0(
+    "ploidy-adjusted-heat_",
+    tolower(args[["overdispersion"]]), "-", tolower(args[["test"]]), "_",
+    tolower(args[["adjust"]]), "_cov", min_analysis_coverage
+  )
+  run_tag <- paste(model_tag, run_id, sep = "_")
+  all_stats_path <- file.path(output_directory, paste0("dml_stats_", run_tag, "_all.csv"))
+  data.table::fwrite(all_stats, all_stats_path)
+
+  output_counts <- data.frame(
+    subset = "all_tested_cpgs",
+    rows = nrow(all_stats),
+    stringsAsFactors = FALSE
+  )
+  for (difference in differences) {
+    selected <- !is.na(all_stats$qvalue) & all_stats$qvalue <= max_q &
+      abs(all_stats$meth.diff) >= difference
+    subset <- all_stats[selected]
+    if (nrow(subset) &&
+        (any(subset$qvalue > max_q) || any(abs(subset$meth.diff) < difference))) {
+      stop(sprintf("The %s%% DML subset violates its declared thresholds.", difference), call. = FALSE)
+    }
+    stem <- sprintf(
+      "dml_%s_diff%s_q%s",
+      run_tag,
+      format(difference, trim = TRUE, scientific = FALSE),
+      format(max_q, trim = TRUE, scientific = FALSE)
+    )
+    csv_path <- file.path(output_directory, paste0(stem, ".csv"))
+    bed_path <- file.path(output_directory, paste0(stem, ".bed"))
+    data.table::fwrite(subset, csv_path)
+    write_bed(subset, bed_path)
+    output_counts <- rbind(
+      output_counts,
+      data.frame(subset = stem, rows = nrow(subset), stringsAsFactors = FALSE)
+    )
+  }
+  write.csv(output_counts, file.path(output_directory, "output_counts.csv"), row.names = FALSE)
+  writeLines(capture.output(utils::sessionInfo()), file.path(output_directory, "session_info.txt"))
+  message(sprintf("Clean MethylKit DML run completed in %s", output_directory))
+  invisible(0L)
+}
+
+main()

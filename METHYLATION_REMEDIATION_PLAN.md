@@ -20,7 +20,7 @@ This plan addresses the correctness and reproducibility issues identified in the
 - [ ] Create one machine-readable WGBS sample metadata file and use it everywhere. It must contain `seq_id`, `library_name`, `ploidy`, `desiccation`, `heat_shock`, and source accession. (`metadata/wgbs_samples.csv` is canonical; remaining legacy scripts still need conversion.)
 - [x] Reconcile the incorrect library names in `percent_methylation_summary.xlsx` with `metadata/wgbs_samples.csv` (D19/D20 and T19/T20 for the heat-shocked WGBS libraries). (The workbook is now explicitly legacy; generated summaries join report IDs to canonical names.)
 - [x] Add a project configuration file for input and output directories, genome assembly, coverage thresholds, methylation-difference thresholds, and statistical settings.
-- [ ] Capture R, Bioconductor, methylKit, Bismark, bedtools, and other package/tool versions in a reproducible environment definition.
+- [ ] Capture R, Bioconductor, methylKit, Bismark, bedtools, and other package/tool versions in a reproducible environment definition. (R 4.6.0, Bioconductor 3.23, methylKit 1.38.0, and historical preprocessing tools are recorded; bedtools remains for Phase 5.)
 
 Acceptance criteria:
 
@@ -45,17 +45,17 @@ Acceptance criteria:
 
 ## Phase 3: Rebuild the DML analysis from a clean session
 
-- [ ] Rewrite `2_WGBS_Methylkit.R` as a non-interactive command-line script using project-relative paths and explicit inputs.
-- [ ] Remove `load(...)`, `rstudioapi`, mutable `setwd(...)` chains, and all references to undefined objects such as `fileName`, `differentialMethylationStatsTreatment`, and `diffMethStatsTreatment50`.
-- [ ] Fail immediately when a package, input file, sample, output directory, or metadata field is missing.
-- [ ] Preserve sample-level biological replicates; do not pool animals.
-- [ ] Use an overdispersion-aware model as the primary analysis, such as methylKit with `overdispersion="MN"` and its corresponding test, or a documented beta-binomial DSS analysis.
-- [ ] Estimate the ploidy effect while accounting for heat shock. Define the primary estimand before running the model:
+- [x] Rewrite `2_WGBS_Methylkit.R` as a non-interactive command-line script using project-relative paths and explicit inputs.
+- [x] Remove `load(...)`, `rstudioapi`, mutable `setwd(...)` chains, and all references to undefined objects such as `fileName`, `differentialMethylationStatsTreatment`, and `diffMethStatsTreatment50`.
+- [x] Fail immediately when a package, input file, sample, output directory, or metadata field is missing.
+- [x] Preserve sample-level biological replicates; do not pool animals.
+- [x] Use an overdispersion-aware model as the primary analysis, such as methylKit with `overdispersion="MN"` and its corresponding test, or a documented beta-binomial DSS analysis.
+- [x] Estimate the ploidy effect while accounting for heat shock. Define the primary estimand before running the model:
   - primary: ploidy effect adjusted for heat-shock status;
   - secondary: ploidy-by-heat interaction or stratified ploidy effects, using a model that supports that design.
-- [ ] Document the rationale for coverage normalization, high-coverage filtering, the 10x threshold, and the requirement that a CpG be observed in all samples.
+- [x] Document the rationale for coverage normalization, high-coverage filtering, the 10x threshold, and the requirement that a CpG be observed in all samples.
 - [ ] Run sensitivity analyses for the coverage/occupancy rule and multiple-testing method.
-- [ ] Write a complete, unfiltered DML statistics table before producing 20% and 50% subsets.
+- [x] Write a complete, unfiltered DML statistics table before producing 20% and 50% subsets.
 
 Acceptance criteria:
 
@@ -67,9 +67,9 @@ Acceptance criteria:
 
 ## Phase 4: Generate consistent DML files and exploratory plots
 
-- [ ] Generate CSV and BED outputs from the same in-memory DML object in the same run.
-- [ ] Use unambiguous names containing the comparison, coverage threshold, effect threshold, model, and run identifier.
-- [ ] Add automated checks that paired CSV/BED files have identical row counts and identical chromosome/start/end keys.
+- [x] Generate CSV and BED outputs from the same in-memory DML object in the same run.
+- [x] Use unambiguous names containing the comparison, coverage threshold, effect threshold, model, and run identifier.
+- [x] Add automated checks that paired CSV/BED files have identical row counts and identical chromosome/start/end keys.
 - [ ] Match methylation data by chromosome, start, and end; never by start position alone.
 - [ ] Base the primary unsupervised PCA and clustering figures on the predefined all-CpG matrix, not on loci selected for group differences.
 - [ ] If DML-only PCA or heatmaps are retained, label them explicitly as descriptive and circular. Use held-out samples or cross-validation for any claim of predictive separation.

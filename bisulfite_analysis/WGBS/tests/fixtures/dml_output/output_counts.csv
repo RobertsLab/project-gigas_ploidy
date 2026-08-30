@@ -1,0 +1,4 @@
+subset,rows
+all_tested_cpgs,3
+dml_ploidy-adjusted-heat_mn-f_slim_cov10_diff20_q0.01,2
+dml_ploidy-adjusted-heat_mn-f_slim_cov10_diff50_q0.01,1

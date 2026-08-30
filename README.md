@@ -55,7 +55,7 @@ Large files are hosted externally:
 1. **Trim reads** — `bisulfite_analysis/WGBS/sbatch_scripts/20210316_cgig_fastp_ronit-ploidy-wgbs.sh`
 2. **Align** — Bismark (run on cluster; BAMs at gannet link above)
 3. **PE report analysis** — `bisulfite_analysis/WGBS/code/run_pe_report_summary.sh`
-4. **DML calling** — `bisulfite_analysis/WGBS/code/2_WGBS_Methylkit.R` (MethylKit)
+4. **DML calling** — `bisulfite_analysis/WGBS/code/run_methylkit_dml.sh` (pinned MethylKit environment; see `bisulfite_analysis/WGBS/DML_ANALYSIS.md`)
 5. **DML genomic feature location** — `bisulfite_analysis/WGBS/code/3_WGBS_DML_feature_location.ipynb`
 6. **qPCR dCt analysis** — `gene_expression/scripts/dct_analysis_NA-to-45.R`
 7. **Global DNA methylation (ELISA)** — `bisulfite_analysis/ELISA/GlobalDNAMeth_Polyploids.Rmd`

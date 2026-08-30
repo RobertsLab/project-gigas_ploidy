@@ -11,7 +11,8 @@
     "allowed_missing_pe_reports": [],
     "cov_files": {
       "local_directory_environment_variable": "GIGAS_WGBS_COV_DIR",
-      "source_url": "https://gannet.fish.washington.edu/panopea/WGBS-gigas-ploidy-desiccation/cov_files/"
+      "source_url": "https://gannet.fish.washington.edu/panopea/WGBS-gigas-ploidy-desiccation/cov_files/",
+      "file_name_template": "{seq_id}_R1.CpG_report.merged_CpG_evidence.cov"
     }
   },
   "outputs": {
@@ -38,6 +39,7 @@
     "overdispersion": "MN",
     "test": "F",
     "p_value_adjustment": "SLIM",
+    "effect": "predicted",
     "maximum_q_value": 0.01,
     "minimum_absolute_methylation_differences": [
       20,
@@ -48,5 +50,13 @@
     "estimand": "ploidy-by-heat interaction or stratified ploidy effects",
     "implementation": null,
     "status": "must be selected before secondary analysis"
+  },
+  "runtime": {
+    "r_version": "4.6.0",
+    "bioconductor_version": "3.23",
+    "methylkit_version": "1.38.0",
+    "database_backend": "tabix",
+    "chunk_size": 1000000,
+    "mc_cores": 2
   }
 }
