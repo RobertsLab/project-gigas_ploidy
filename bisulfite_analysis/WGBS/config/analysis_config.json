@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "status": "draft_pending_model_review",
+  "sample_metadata": "metadata/wgbs_samples.csv",
+  "reference": {
+    "assembly": "cgigas_uk_roslin_v1",
+    "feature_directory": "bisulfite_analysis/WGBS/GFF"
+  },
+  "inputs": {
+    "pe_report_directory": "bisulfite_analysis/WGBS/data/PE_reports",
+    "allowed_missing_pe_reports": [],
+    "cov_files": {
+      "local_directory_environment_variable": "GIGAS_WGBS_COV_DIR",
+      "source_url": "https://gannet.fish.washington.edu/panopea/WGBS-gigas-ploidy-desiccation/cov_files/"
+    }
+  },
+  "outputs": {
+    "run_directory": "bisulfite_analysis/WGBS/results"
+  },
+  "coordinates": {
+    "merged_cpg_input": "zero-based half-open",
+    "bed_output": "zero-based half-open",
+    "gff_input": "one-based closed"
+  },
+  "filtering": {
+    "methread_minimum_coverage": 2,
+    "analysis_minimum_coverage": 10,
+    "high_coverage_percentile": 99.9,
+    "normalize_coverage": true,
+    "require_cpg_in_all_samples": true
+  },
+  "primary_model": {
+    "estimand": "ploidy effect adjusted for heat shock",
+    "treatment": "ploidy",
+    "covariates": [
+      "heat_shock"
+    ],
+    "overdispersion": "MN",
+    "test": "F",
+    "p_value_adjustment": "SLIM",
+    "maximum_q_value": 0.01,
+    "minimum_absolute_methylation_differences": [
+      20,
+      50
+    ]
+  },
+  "secondary_model": {
+    "estimand": "ploidy-by-heat interaction or stratified ploidy effects",
+    "implementation": null,
+    "status": "must be selected before secondary analysis"
+  }
+}

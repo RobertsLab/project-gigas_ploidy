@@ -26,6 +26,7 @@ project-gigas_ploidy/
 │       ├── GFF/        # Genome feature annotations (Roslin v1)
 │       ├── analyses/   # Summary tables
 │       ├── plots/      # PCA, heatmap, methylation/coverage figures
+│       ├── results/    # New run-specific remediated outputs
 │       └── sbatch_scripts/  # Cluster job scripts
 ├── gene_expression/
 │   ├── scripts/        # qPCR dCt analysis R scripts
@@ -53,7 +54,7 @@ Large files are hosted externally:
 
 1. **Trim reads** — `bisulfite_analysis/WGBS/sbatch_scripts/20210316_cgig_fastp_ronit-ploidy-wgbs.sh`
 2. **Align** — Bismark (run on cluster; BAMs at gannet link above)
-3. **PE report analysis** — `bisulfite_analysis/WGBS/code/1_WGBS_PE_report_analysis.R`
+3. **PE report analysis** — `bisulfite_analysis/WGBS/code/run_pe_report_summary.sh`
 4. **DML calling** — `bisulfite_analysis/WGBS/code/2_WGBS_Methylkit.R` (MethylKit)
 5. **DML genomic feature location** — `bisulfite_analysis/WGBS/code/3_WGBS_DML_feature_location.ipynb`
 6. **qPCR dCt analysis** — `gene_expression/scripts/dct_analysis_NA-to-45.R`
@@ -74,4 +75,4 @@ Large files are hosted externally:
 | T11–T18 | Triploid | Desiccation + 27°C for 24 hrs |
 | T19–T20 | Triploid | Desiccation + 27°C for 24 hrs + 1 hr heat shock (45°C) |
 
-WGBS sequencing IDs: `zr3534_1` through `zr3534_10` (see `gene_expression/data/zr3534_wgbs_info.csv`).
+WGBS sequencing IDs: `zr3534_1` through `zr3534_10` (see the canonical metadata in `metadata/wgbs_samples.csv`).

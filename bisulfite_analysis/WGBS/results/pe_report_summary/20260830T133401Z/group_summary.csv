@@ -1,0 +1,5 @@
+"ploidy","heat_shock","n","mean_cpg_percent","sd_cpg_percent","se_cpg_percent"
+"diploid","no",3,10.9,0.781024967590666,0.45092497528229
+"diploid","yes",2,11.2,0,0
+"triploid","no",3,10.2333333333333,0.115470053837926,0.066666666666667
+"triploid","yes",2,10,0,0

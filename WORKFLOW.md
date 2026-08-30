@@ -8,6 +8,8 @@ End-to-end pipeline for the gigas ploidy desiccation WGBS + qPCR study.
 
 10 ctenidia tissue samples sequenced by WGBS (Zymo-Seq kit):
 
+Canonical machine-readable metadata: `metadata/wgbs_samples.csv`.
+
 | SeqID | Library | Ploidy | Desiccation | Heat Shock | SRA |
 |-------|---------|--------|-------------|------------|-----|
 | zr3534_1 | D11-C | Diploid | Yes | No | SRX9508698 |
@@ -23,7 +25,7 @@ End-to-end pipeline for the gigas ploidy desiccation WGBS + qPCR study.
 
 SRA BioProject: [PRJNA678408](https://www.ncbi.nlm.nih.gov/bioproject/PRJNA678408)
 
-> **Note:** The PE report for zr3534_7 is not committed to this repo but the sample is present in `data/PE_reports/percent_methylation_summary.xlsx` and was included in downstream analyses.
+All ten Bismark PE reports are committed. The previously absent `zr3534_7` report was recovered from the project archive; see `bisulfite_analysis/WGBS/data/PE_reports/README.md` for provenance.
 
 ---
 
@@ -44,7 +46,8 @@ Alignment statistics summarized in PE report `.txt` files (`bisulfite_analysis/W
 ### Step 3 — PE Report Analysis
 **Script:** `bisulfite_analysis/WGBS/code/1_WGBS_PE_report_analysis.R`  
 **Input:** Bismark PE report `.txt` files  
-**Output:** `data/PE_reports/percent_methylation_summary.xlsx` — per-sample mapping rates and global methylation %
+**Command:** `bisulfite_analysis/WGBS/code/run_pe_report_summary.sh`
+**Output:** a run-specific directory under `bisulfite_analysis/WGBS/results/pe_report_summary/` containing source-derived per-sample and group CSV files. The old `data/PE_reports/percent_methylation_summary.xlsx` is retained as legacy history only.
 
 ### Step 4 — DML Calling
 **Script:** `bisulfite_analysis/WGBS/code/2_WGBS_Methylkit.R`  

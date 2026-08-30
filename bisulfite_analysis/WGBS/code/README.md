@@ -1,10 +1,20 @@
 # WGBS Analysis Code
 
+> **Remediation status:** PE-report summarization has been replaced with a clean, source-derived workflow. DML calling and feature annotation still contain known correctness and reproducibility issues and must not be treated as canonical until the remaining phases in `../../../METHYLATION_REMEDIATION_PLAN.md` are completed. Draft clean-run settings are recorded in `../config/analysis_config.json`, and provenance checksums are under `../provenance/`.
+
 Run scripts in order:
 
 ## 1. PE Report Analysis
 **`1_WGBS_PE_report_analysis.R`**
-Parses Bismark paired-end alignment reports from `data/PE_reports/` and summarizes mapping rates and percent methylation across all samples.
+Parses all ten Bismark paired-end reports, validates reported percentages against their underlying counts, joins canonical sample metadata, and calculates group statistics without reading the legacy workbook. It uses base R and accepts explicit command-line paths.
+
+Run it through the configuration-aware wrapper:
+
+```bash
+bisulfite_analysis/WGBS/code/run_pe_report_summary.sh
+```
+
+This writes `per_sample.csv` and `group_summary.csv` to a new timestamped directory under `results/pe_report_summary/`. Run the corresponding verification with `bisulfite_analysis/WGBS/tests/run_pe_report_checks.sh`.
 
 ## 2. MethylKit DML Calling
 **`2_WGBS_Methylkit.R`**

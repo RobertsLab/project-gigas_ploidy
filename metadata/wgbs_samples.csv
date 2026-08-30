@@ -1,0 +1,11 @@
+seq_id,library_name,tissue,ploidy,desiccation,heat_shock,library_kit,sra_bioproject,sra_accession
+zr3534_1,D11-C,ctenidia,diploid,yes,no,Zymo-Seq WGBS Library Kit (Cat#: D5465),PRJNA678408,SRX9508698
+zr3534_2,D12-C,ctenidia,diploid,yes,no,Zymo-Seq WGBS Library Kit (Cat#: D5465),PRJNA678408,SRX9508699
+zr3534_3,D13-C,ctenidia,diploid,yes,no,Zymo-Seq WGBS Library Kit (Cat#: D5465),PRJNA678408,SRX9508700
+zr3534_4,D19-C,ctenidia,diploid,yes,yes,Zymo-Seq WGBS Library Kit (Cat#: D5465),PRJNA678408,SRX9508701
+zr3534_5,D20-C,ctenidia,diploid,yes,yes,Zymo-Seq WGBS Library Kit (Cat#: D5465),PRJNA678408,SRX9508702
+zr3534_6,T11-C,ctenidia,triploid,yes,no,Zymo-Seq WGBS Library Kit (Cat#: D5465),PRJNA678408,SRX9508703
+zr3534_7,T12-C,ctenidia,triploid,yes,no,Zymo-Seq WGBS Library Kit (Cat#: D5465),PRJNA678408,SRX9508704
+zr3534_8,T13-C,ctenidia,triploid,yes,no,Zymo-Seq WGBS Library Kit (Cat#: D5465),PRJNA678408,SRX9508705
+zr3534_9,T19-C,ctenidia,triploid,yes,yes,Zymo-Seq WGBS Library Kit (Cat#: D5465),PRJNA678408,SRX9508706
+zr3534_10,T20-C,ctenidia,triploid,yes,yes,Zymo-Seq WGBS Library Kit (Cat#: D5465),PRJNA678408,SRX9508707

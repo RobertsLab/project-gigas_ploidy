@@ -15,11 +15,11 @@ This plan addresses the correctness and reproducibility issues identified in the
 
 ## Phase 1: Freeze provenance and establish one configuration
 
-- [ ] Record the current commit hash and checksums for all files under `bisulfite_analysis/WGBS/DML/`, `bisulfite_analysis/WGBS/analyses/`, and `bisulfite_analysis/WGBS/plots/` in a legacy-results manifest.
-- [ ] Mark current affected outputs as legacy in their README files; do not silently overwrite them during development.
-- [ ] Create one machine-readable WGBS sample metadata file and use it everywhere. It must contain `seq_id`, `library_name`, `ploidy`, `desiccation`, `heat_shock`, and source accession.
-- [ ] Reconcile the incorrect library names in `percent_methylation_summary.xlsx` with `gene_expression/data/zr3534_wgbs_info.csv` (D19/D20 and T19/T20 for the heat-shocked WGBS libraries).
-- [ ] Add a project configuration file for input and output directories, genome assembly, coverage thresholds, methylation-difference thresholds, and statistical settings.
+- [x] Record the current commit hash and checksums for all files under `bisulfite_analysis/WGBS/DML/`, `bisulfite_analysis/WGBS/analyses/`, and `bisulfite_analysis/WGBS/plots/` in a legacy-results manifest.
+- [x] Mark current affected outputs as legacy in their README files; do not silently overwrite them during development.
+- [ ] Create one machine-readable WGBS sample metadata file and use it everywhere. It must contain `seq_id`, `library_name`, `ploidy`, `desiccation`, `heat_shock`, and source accession. (`metadata/wgbs_samples.csv` is canonical; remaining legacy scripts still need conversion.)
+- [x] Reconcile the incorrect library names in `percent_methylation_summary.xlsx` with `metadata/wgbs_samples.csv` (D19/D20 and T19/T20 for the heat-shocked WGBS libraries). (The workbook is now explicitly legacy; generated summaries join report IDs to canonical names.)
+- [x] Add a project configuration file for input and output directories, genome assembly, coverage thresholds, methylation-difference thresholds, and statistical settings.
 - [ ] Capture R, Bioconductor, methylKit, Bismark, bedtools, and other package/tool versions in a reproducible environment definition.
 
 Acceptance criteria:
@@ -32,10 +32,10 @@ Acceptance criteria:
 
 - [ ] Separate cluster preprocessing from downstream analysis and document the exact Bismark reference files and command versions.
 - [ ] Retain deduplication and merged-CpG generation, with zero-based half-open coordinates documented at the file boundary.
-- [ ] Replace the workbook-only behavior in `1_WGBS_PE_report_analysis.R` with parsing of the committed Bismark PE reports plus the canonical metadata file.
-- [ ] Add or retrieve the missing `zr3534_7` PE report, or explicitly record its external checksum and source URL.
-- [ ] Calculate group means, standard deviations, sample counts, and standard errors directly from the parsed per-sample table. Do not maintain a manually edited summary sheet.
-- [ ] Test that all expected sequence IDs occur exactly once and that parsed CpG methylation percentages match the Bismark reports.
+- [x] Replace the workbook-only behavior in `1_WGBS_PE_report_analysis.R` with parsing of the committed Bismark PE reports plus the canonical metadata file.
+- [x] Add or retrieve the missing `zr3534_7` PE report, or explicitly record its external checksum and source URL.
+- [x] Calculate group means, standard deviations, sample counts, and standard errors directly from the parsed per-sample table. Do not maintain a manually edited summary sheet.
+- [x] Test that all expected sequence IDs occur exactly once and that parsed CpG methylation percentages match the Bismark reports.
 
 Acceptance criteria:
 
@@ -133,4 +133,3 @@ Final release criteria:
 - All canonical results are traceable to raw or externally checksummed inputs.
 - No unresolved disagreement exists among metadata, CSV, BED, workbook, and figure outputs.
 - Scientific conclusions are rewritten to match the validated model and treatment definitions.
-
