@@ -1,52 +1,75 @@
-# WGBS-gigas-ploidy-desiccation
-Project investigating the effects of desiccation/elevated temp. exposure on triploid and diploid Pacific oysters.
+# project-gigas_ploidy
 
-# Documents
-1. [Manuscript](https://docs.google.com/document/d/17mcGDI-TWmU4vgBXmiXmeofe4qEuFH5inBKBHhG9tzg/edit)
-2. [Triploid-Diploid-Oyster-Poster_RonitJain.ppt](https://github.com/RobertsLab/gigas_ploidy/blob/master/Triploid-Diploid-Oyster-Poster_RonitJain.pptx) (Miscrosoft PowerPoint): Research poster created by Ronit Jain.
+Project investigating the effects of desiccation and elevated temperature exposure on **triploid and diploid Pacific oysters** (*Crassostrea gigas*).
 
-## Files
-1. [BED files](https://gannet.fish.washington.edu/panopea/WGBS-gigas-ploidy-desiccation/bed_files/)
-2. [COV files](https://gannet.fish.washington.edu/panopea/WGBS-gigas-ploidy-desiccation/cov_files/)
-3. [BAM files](https://gannet.fish.washington.edu/panopea/030521-ronrosM/) - bismark output
-4. [GFF files](https://github.com/mattgeorgephd/WGBS-gigas-ploidy-desiccation/tree/master/bisulfide_analysis/WGBS/GFF)
+## Manuscripts & Presentations
 
-
+- [Manuscript (Google Doc)](https://docs.google.com/document/d/17mcGDI-TWmU4vgBXmiXmeofe4qEuFH5inBKBHhG9tzg/edit)
+- [Ronit's manuscript draft (Google Doc)](https://docs.google.com/document/d/1nwY9I3pVzF5Xlfdzb7SdO1QKaNp5qyj0DuPCCa_YXi8/edit?usp=sharing)
+- [Poster (presentations/)](presentations/Triploid-Diploid-Oyster-Poster_RonitJain.pptx)
 
 ---
 
-### Files:
+## Repository Structure
 
-- 
-
----
-
-#### Sample name guide
-
-- D01-D08: Diploid oysters exposed to control conditions (water in aquarium)
-
-- D09-D10: Diploid oysters exposed to control conditions (water in aquarium); subsequently exposed to 1 hr acute heat shock at 45 degrees Celsius.
-
-- D11-D18: Diploid oysters exposed to desiccation + elevated temperature (27 degrees Celsius) for 24 hrs
-
-- D19-D20: Diploid oysters exposed to desiccation + elevated temperature (27 degrees Celsius) for 24 hrs; subsequently exposed to 1 hr acute heat shock at 45 degrees Celsius.
-
-- T01-T08: Triploid oysters exposed to control conditions (water in aquarium)
-
-- T09-T10: Triploid oysters exposed to control conditions (water in aquarium); subsequently exposed to 1 hr acute heat shock at 45 degrees Celsius.
-
-- T11-T18: Triploid oysters exposed to desiccation + elevated temperature (27 degrees Celsius) for 24 hrs
-
-- T19-T20: Triploid oysters exposed to desiccation + elevated temperature (27 degrees Celsius) for 24 hrs; subsequently exposed to 1 hr acute heat shock at 45 degrees Celsius.
+```
+project-gigas_ploidy/
+├── bisulfite_analysis/
+│   ├── ELISA/          # Global DNA methylation assay (R scripts, raw data, figures)
+│   └── WGBS/           # Whole-genome bisulfite sequencing analysis
+│       ├── code/       # R scripts and Jupyter notebook (run in order 1→3)
+│       ├── data/       # Bismark PE alignment reports
+│       ├── DML/        # Differentially methylated loci (CSV, BED)
+│       ├── GFF/        # Genome feature annotations (Roslin v1)
+│       ├── analyses/   # Summary tables
+│       ├── plots/      # PCA, heatmap, methylation/coverage figures
+│       └── sbatch_scripts/  # Cluster job scripts
+├── gene_expression/
+│   ├── scripts/        # qPCR dCt analysis R scripts
+│   ├── data/           # qPCR Ct values (per gene CSVs) and WGBS sample info
+│   └── analyses/       # Per-gene expression plots
+├── manuscript/         # Local .docx backup of manuscript
+└── presentations/      # Conference posters and slides
+```
 
 ---
 
-Other pertinent files:
+## Remote Data
 
-- [Ronit's manuscript](https://docs.google.com/document/d/1nwY9I3pVzF5Xlfdzb7SdO1QKaNp5qyj0DuPCCa_YXi8/edit?usp=sharing) (Google Doc)
+Large files are hosted externally:
 
-- [Global DNA Methylation R script](https://github.com/shellytrigg/C_gigas/blob/master/Polyploids/GlobalDNAMeth_Polyploids.R) (via Shelly Trigg GitHub)
+| Type | Location |
+|------|----------|
+| BED files | https://gannet.fish.washington.edu/panopea/WGBS-gigas-ploidy-desiccation/bed_files/ |
+| COV files | https://gannet.fish.washington.edu/panopea/WGBS-gigas-ploidy-desiccation/cov_files/ |
+| BAM files (Bismark output) | https://gannet.fish.washington.edu/panopea/030521-ronrosM/ |
 
-- [Global DNA Methylation Analysis](https://github.com/shellytrigg/C_gigas/blob/master/Polyploids/GlobalDNAMeth_Polyploids.md) (via Shelly Trigg GitHub)
+---
 
+## Analysis Workflow
+
+1. **Trim reads** — `bisulfite_analysis/WGBS/sbatch_scripts/20210316_cgig_fastp_ronit-ploidy-wgbs.sh`
+2. **Align** — Bismark (run on cluster; BAMs at gannet link above)
+3. **PE report analysis** — `bisulfite_analysis/WGBS/code/1_WGBS_PE_report_analysis.R`
+4. **DML calling** — `bisulfite_analysis/WGBS/code/2_WGBS_Methylkit.R` (MethylKit)
+5. **DML genomic feature location** — `bisulfite_analysis/WGBS/code/3_WGBS_DML_feature_location.ipynb`
+6. **qPCR dCt analysis** — `gene_expression/scripts/dct_analysis_NA-to-45.R`
+7. **Global DNA methylation (ELISA)** — `bisulfite_analysis/ELISA/GlobalDNAMeth_Polyploids.Rmd`
+
+---
+
+## Sample Guide
+
+| ID Range | Ploidy | Treatment |
+|----------|--------|-----------|
+| D01–D08 | Diploid | Control (aquarium water) |
+| D09–D10 | Diploid | Control + 1 hr heat shock (45°C) |
+| D11–D18 | Diploid | Desiccation + 27°C for 24 hrs |
+| D19–D20 | Diploid | Desiccation + 27°C for 24 hrs + 1 hr heat shock (45°C) |
+| T01–T08 | Triploid | Control (aquarium water) |
+| T09–T10 | Triploid | Control + 1 hr heat shock (45°C) |
+| T11–T18 | Triploid | Desiccation + 27°C for 24 hrs |
+| T19–T20 | Triploid | Desiccation + 27°C for 24 hrs + 1 hr heat shock (45°C) |
+
+WGBS sequencing IDs: `zr3534_1` through `zr3534_10` (see `gene_expression/data/zr3534_wgbs_info.csv`).
 
