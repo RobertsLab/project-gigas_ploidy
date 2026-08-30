@@ -1,11 +1,23 @@
-# gigas_ploidy
+# WGBS-gigas-ploidy-desiccation
 Project investigating the effects of desiccation/elevated temp. exposure on triploid and diploid Pacific oysters.
+
+# Documents
+1. [Manuscript](https://docs.google.com/document/d/17mcGDI-TWmU4vgBXmiXmeofe4qEuFH5inBKBHhG9tzg/edit)
+2. [Triploid-Diploid-Oyster-Poster_RonitJain.ppt](https://github.com/RobertsLab/gigas_ploidy/blob/master/Triploid-Diploid-Oyster-Poster_RonitJain.pptx) (Miscrosoft PowerPoint): Research poster created by Ronit Jain.
+
+## Files
+1. [BED files](https://gannet.fish.washington.edu/panopea/WGBS-gigas-ploidy-desiccation/bed_files/)
+2. [COV files](https://gannet.fish.washington.edu/panopea/WGBS-gigas-ploidy-desiccation/cov_files/)
+3. [BAM files](https://gannet.fish.washington.edu/panopea/030521-ronrosM/) - bismark output
+4. [GFF files](https://github.com/mattgeorgephd/WGBS-gigas-ploidy-desiccation/tree/master/bisulfide_analysis/WGBS/GFF)
+
+
 
 ---
 
 ### Files:
 
-- [Triploid-Diploid-Oyster-Poster_RonitJain.ppt](https://github.com/RobertsLab/gigas_ploidy/blob/master/Triploid-Diploid-Oyster-Poster_RonitJain.pptx) (Miscrosoft PowerPoint): Research poster created by Ronit Jain.
+- 
 
 ---
 

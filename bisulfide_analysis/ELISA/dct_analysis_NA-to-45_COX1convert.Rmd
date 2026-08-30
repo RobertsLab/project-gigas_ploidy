@@ -1,0 +1,236 @@
+---
+title: "Untitled"
+author: "Shelly Trigg"
+date: "2/22/2019"
+output: rmarkdown::github_document
+---
+
+```{r}
+#Necessary Packages to manipulate data and plot values. 
+require(plyr)
+require(ggplot2)
+require(splitstackshape)
+```
+
+```{r}
+#Read in  Ct value table
+dCt<-read.csv("~/Documents/GitHub/gigas_ploidy_ronits/data/qpcr_ct_values/qpcr_data_consolidated.csv", header=T)
+
+#Split SAMPLE_ID column to create columns for Ploidyulation, treatment, and sample number
+dCt<-cSplit(dCt,"Sample", sep= "_", drop=F)
+
+#rename columns appropriately
+dCt<-rename(dCt,replace=c("Sample_1"="Ploidy","Sample_2"="Desiccation","Sample_3"="HeatShock","Sample_4"="SampleNum"))
+
+#change NA to 45
+dCt[is.na(dCt)] <- 45
+
+#calculate normalized expression of target gene Ct relative to actin Ct using: 2^-(delta Ct)
+dCt$HSC70<-2^-(dCt$HSC70-dCt$Actin)
+dCt$DNMT1<-2^-(dCt$DNMT1-dCt$Actin)
+dCt$MBD2<-2^-(dCt$MBD2-dCt$Actin)
+dCt$MeCP2<-2^-(dCt$MeCP2-dCt$Actin)
+dCt$HIF1A<-2^-(dCt$HIF1A-dCt$Actin)
+dCt$HATHaP2<-2^-(dCt$HATHaP2-dCt$Actin)
+dCt$HAT<-2^-(dCt$HAT-dCt$Actin)
+dCt$HSP90<-2^-(dCt$HSP90-dCt$Actin)
+dCt$SOD<-2^-(dCt$SOD-dCt$Actin)
+dCt$ATPsynthetase<-2^-(dCt$ATPsynthetase-dCt$Actin)
+dCt$COX1<-2^-(dCt$COX1)
+
+
+
+#log transform the data to develop normality in data
+dCt$HSC70log<-log(dCt$HSC70)
+dCt$DNMT1log<-log(dCt$DNMT1)
+dCt$MeCP2log<-log(dCt$MeCP2)
+dCt$HIF1Alog<-log(dCt$HIF1A)
+dCt$HATHaP2log<-log(dCt$HATHaP2)
+dCt$HATlog<-log(dCt$HAT)
+dCt$HSP90log<-log(dCt$HSP90)
+dCt$MBD2log<-log(dCt$MBD2)
+dCt$SODlog<-log(dCt$SOD)
+dCt$ATPsynthetaselog<-log(dCt$ATPsynthetase)
+dCt$COX1log<-log(dCt$COX1)
+```
+
+
+Run ANOVA's on all log transformed data as well as Tukey's Honestly Significant Difference post hoc test
+```{r}
+HSC70<-aov(HSC70log~Ploidy+Desiccation+Ploidy:Desiccation, data=dCt)
+HSC70
+TukeyHSD(HSC70)
+summary(HSC70)
+
+DNMT1<-aov(DNMT1log~Ploidy+Desiccation+Ploidy:Desiccation, data=dCt)
+DNMT1
+TukeyHSD(DNMT1)
+summary(DNMT1)
+
+MeCP2<-aov(MeCP2log~Ploidy+Desiccation+Ploidy:Desiccation, data=dCt)
+MeCP2
+TukeyHSD(MeCP2)
+summary(MeCP2)
+
+HIF1A<-aov(HIF1Alog~Ploidy+Desiccation+Ploidy:Desiccation, data=dCt)
+HIF1A
+TukeyHSD(HIF1A)
+summary(HIF1A)
+
+HATHaP2<-aov(HATHaP2log~Ploidy+Desiccation+Ploidy:Desiccation, data=dCt)
+HATHaP2
+TukeyHSD(HATHaP2)
+summary(HATHaP2)
+
+HAT<-aov(HATlog~Ploidy+Desiccation+Ploidy:Desiccation, data=dCt)
+HAT
+TukeyHSD(HAT)
+summary(HAT)
+
+HSP90<-aov(HSP90log~Ploidy+Desiccation+Ploidy:Desiccation, data=dCt)
+HSP90
+TukeyHSD(HSP90)
+summary(HSP90)
+
+SOD<-aov(SODlog~Ploidy+Desiccation+Ploidy:Desiccation, data=dCt)
+SOD
+TukeyHSD(SOD)
+summary(SOD)
+
+ATPsynthetase<-aov(ATPsynthetaselog~Ploidy+Desiccation+Ploidy:Desiccation, data=dCt)
+ATPsynthetase
+TukeyHSD(ATPsynthetase)
+summary(ATPsynthetase)
+
+MBD2<-aov(MBD2log~Ploidy+Desiccation+Ploidy:Desiccation, data=dCt)
+MBD2
+TukeyHSD(MBD2)
+summary(MBD2)
+
+COX1<-aov(COX1log~Ploidy+Desiccation+Ploidy:Desiccation, data=dCt)
+COX1
+TukeyHSD(COX1)
+summary(COX1)
+```
+
+graph all normalized Ct values to produce boxplots to visualize data
+```{r, echo = FALSE, fig.height = 12, fig.width = 15}
+
+ggplot(data=dCt)+geom_boxplot(aes(x=Ploidy, y=HSC70,fill=Desiccation))+theme_bw()+
+  scale_fill_manual(values=c("#31C4ED", "#62D12B"),
+                  labels=c("Control","Desiccation + Elevated Temp."))+
+  guides(fill=guide_legend(title="Treatment"))+
+  theme(axis.text.x=element_text(size=15), axis.text.y=element_text(size=13),
+        axis.title.x=element_text(size=19), axis.title.y=element_text(size=20),
+        legend.position=c(.09,.87),panel.grid.major=element_blank(),
+        legend.key=element_rect(fill=NA))+
+  ylim(c(0,0.023))+scale_x_discrete(labels=c("Diploid","Triploid"))+
+  labs(x="Ploidy", y=expression(paste("HSC70 Expression (",Delta,"Ct)")))
+
+ggplot(data=dCt)+geom_boxplot(aes(x=Desiccation, y=DNMT1,fill=Ploidy))+theme_bw()+
+  scale_fill_manual(values=c("#31C4ED", "#62D12B"),
+                  labels=c("Diploid","Triploid"))+
+  guides(fill=guide_legend(title="Ploidy"))+
+  theme(axis.text.x=element_text(size=15), axis.text.y=element_text(size=13),
+        axis.title.x=element_text(size=19), axis.title.y=element_text(size=20),
+        legend.position=c(.09,.87),panel.grid.major=element_blank(),
+        legend.key=element_rect(fill=NA))+
+  ylim(c(0,0.00075))+scale_x_discrete(labels=c("Control","Desiccation + Elevated Temp."))+
+  labs(x="Treatment", y=expression(paste("DNMT1 Expression (",Delta,"Ct)")))
+
+ggplot(data=dCt)+geom_boxplot(aes(x=Desiccation, y=MBD2,fill=Ploidy))+theme_bw()+
+  scale_fill_manual(values=c("#31C4ED", "#62D12B"),
+                  labels=c("Diploid","Triploid"))+
+  guides(fill=guide_legend(title="Ploidy"))+
+  theme(axis.text.x=element_text(size=15), axis.text.y=element_text(size=13),
+        axis.title.x=element_text(size=19), axis.title.y=element_text(size=20),
+        legend.position=c(.09,.87),panel.grid.major=element_blank(),
+        legend.key=element_rect(fill=NA))+
+  ylim(c(0,0.0002))+scale_x_discrete(labels=c("Control","Desiccation + Elevated Temp."))+
+  labs(x="Treatment", y=expression(paste("MBD2 Expression (",Delta,"Ct)")))
+
+ggplot(data=dCt)+geom_boxplot(aes(x=Desiccation, y=MeCP2,fill=Ploidy))+theme_bw()+
+  scale_fill_manual(values=c("#31C4ED", "#62D12B"),
+                  labels=c("Diploid","Triploid"))+
+  guides(fill=guide_legend(title="Ploidy"))+
+  theme(axis.text.x=element_text(size=15), axis.text.y=element_text(size=13),
+        axis.title.x=element_text(size=19), axis.title.y=element_text(size=20),
+        legend.position=c(.09,.87),panel.grid.major=element_blank(),
+        legend.key=element_rect(fill=NA))+
+  ylim(c(0,0.0004))+scale_x_discrete(labels=c("Control","Desiccation + Elevated Temp."))+
+  labs(x="Treatment", y=expression(paste("MeCP2 Expression (",Delta,"Ct)")))
+
+ggplot(data=dCt)+geom_boxplot(aes(x=Desiccation, y=HIF1A,fill=Ploidy))+theme_bw()+
+  scale_fill_manual(values=c("#31C4ED", "#62D12B"),
+                  labels=c("Diploid","Triploid"))+
+  guides(fill=guide_legend(title="Ploidy"))+
+  theme(axis.text.x=element_text(size=15), axis.text.y=element_text(size=13),
+        axis.title.x=element_text(size=19), axis.title.y=element_text(size=20),
+        legend.position=c(.09,.87),panel.grid.major=element_blank(),
+        legend.key=element_rect(fill=NA))+
+  ylim(c(0,0.0004))+scale_x_discrete(labels=c("Control","Desiccation + Elevated Temp."))+
+  labs(x="Treatment", y=expression(paste("HIF1A Expression (",Delta,"Ct)")))
+
+ggplot(data=dCt)+geom_boxplot(aes(x=Desiccation, y=HATHaP2,fill=Ploidy))+theme_bw()+
+  scale_fill_manual(values=c("#31C4ED", "#62D12B"),
+                  labels=c("Diploid","Triploid"))+
+  guides(fill=guide_legend(title="Ploidy"))+
+  theme(axis.text.x=element_text(size=15), axis.text.y=element_text(size=13),
+        axis.title.x=element_text(size=19), axis.title.y=element_text(size=20),
+        legend.position=c(.09,.87),panel.grid.major=element_blank(),
+        legend.key=element_rect(fill=NA))+
+  ylim(c(0,0.013))+scale_x_discrete(labels=c("Control","Desiccation + Elevated Temp."))+
+  labs(x="Treatment", y=expression(paste("HATHaP2 Expression (",Delta,"Ct)")))
+
+ggplot(data=dCt)+geom_boxplot(aes(x=Desiccation, y=HAT,fill=Ploidy))+theme_bw()+
+  scale_fill_manual(values=c("#31C4ED", "#62D12B"),
+                  labels=c("Diploid","Triploid"))+
+  guides(fill=guide_legend(title="Ploidy"))+
+  theme(axis.text.x=element_text(size=15), axis.text.y=element_text(size=13),
+        axis.title.x=element_text(size=19), axis.title.y=element_text(size=20),
+        legend.position=c(.09,.87),panel.grid.major=element_blank(),
+        legend.key=element_rect(fill=NA))+
+  ylim(c(0,0.0003))+scale_x_discrete(labels=c("Control","Desiccation + Elevated Temp."))+
+  labs(x="Treatment", y=expression(paste("HAT Expression (",Delta,"Ct)")))
+
+ggplot(data=dCt)+geom_boxplot(aes(x=Desiccation, y=HSP90,fill=Ploidy))+theme_bw()+
+  scale_fill_manual(values=c("#31C4ED", "#62D12B"),
+                  labels=c("Diploid","Triploid"))+
+  guides(fill=guide_legend(title="Ploidy"))+
+  theme(axis.text.x=element_text(size=15), axis.text.y=element_text(size=13),
+        axis.title.x=element_text(size=19), axis.title.y=element_text(size=20),
+        legend.position=c(.09,.87),panel.grid.major=element_blank(),
+        legend.key=element_rect(fill = NA))+
+  ylim(c(0,0.013))+scale_x_discrete(labels=c("Control","Desiccation + Elevated Temp."))+
+  labs(x="Treatment", y=expression(paste("HSP90 Expression (",Delta,"Ct)")))
+
+ggplot(data=dCt)+geom_boxplot(aes(x=Desiccation, y=SOD,fill=Ploidy))+theme_bw()+
+  scale_fill_manual(values=c("#31C4ED", "#62D12B"),
+                  labels=c("Diploid","Triploid"))+
+  guides(fill=guide_legend(title="Ploidy"))+
+  theme(axis.text.x=element_text(size=15), axis.text.y=element_text(size=13),
+        axis.title.x=element_text(size=19), axis.title.y=element_text(size=20),
+        legend.position=c(.09,.87),panel.grid.major=element_blank(),
+        legend.key=element_rect(fill = NA))+
+  ylim(c(0,0.4))+scale_x_discrete(labels=c("Control","Desiccation + Elevated Temp."))+
+  labs(x="Treatment", y=expression(paste("SOD Expression (",Delta,"Ct)")))
+
+ggplot(data=dCt)+geom_boxplot(aes(x=Desiccation, y=ATPsynthetase,fill=Ploidy))+theme_bw()+
+  scale_fill_manual(values=c("#31C4ED", "#62D12B"),
+                  labels=c("Diploid","Triploid"))+
+  guides(fill=guide_legend(title="Ploidy"))+
+  theme(axis.text.x=element_text(size=15), axis.text.y=element_text(size=13),
+        axis.title.x=element_text(size=19), axis.title.y=element_text(size=18),
+        legend.position=c(.09,.87),panel.grid.major=element_blank(),
+        legend.key=element_rect(fill = NA))+
+  ylim(c(0,0.0016))+scale_x_discrete(labels=c("Control","Desiccation + Elevated Temp."))+
+  labs(x="Treatment", y=expression(paste("ATP Synthetase Expression (",Delta,"Ct)")))
+
+ggplot(data=dCt)+geom_boxplot(aes(x=Desiccation, y=COX1,fill=Ploidy))+theme_bw()+ 
+  scale_fill_manual(values=c("#31C4ED", "#62D12B"), 
+                    labels=c("Diploid","Triploid")) + 
+  guides(fill=guide_legend(title="Ploidy")) +
+  theme(axis.text.x=element_text(size=15), axis.text.y=element_text(size=13),
+        axis.title.x=element_text(size=19), axis.title.y=element_text(size=18),
+        legend.position=c(.09,.87),panel.grid.major=element_blank(),
+        legend.key=element_rect(fill = NA))+scale_x_discrete(labels=c("Control","Desiccation + Elevated Temp."))+ labs(x="Treatment", y=expression(paste("COX1 DNA Abundance")))
